@@ -19,13 +19,15 @@ export default async function handler(req, res) {
     const prompt = `
 Analyze the following message for emotional manipulation.
 
-You MUST return ONLY valid JSON.
-Do not include any text before or after the JSON.
+Return ONLY a valid JSON object.
+Do not use markdown.
+Do not use code blocks.
+Do not add any text before or after the JSON.
 
-Format:
+Use exactly this format:
 {
-  "toxicity_score": number,
-  "detected": ["Gaslighting", "Manipulation"],
+  "toxicity_score": 0,
+  "detected": ["Gaslighting"],
   "explanation": "short explanation",
   "emotional_impact": "short emotional impact",
   "suggested_reply": "short reply"
@@ -38,6 +40,7 @@ ${message}
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 300,
+      temperature: 0,
       messages: [
         {
           role: "user",
@@ -48,11 +51,25 @@ ${message}
 
     const text = response.content[0].text;
 
-    const data = JSON.parse(text);
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+
+    if (start === -1 || end === -1) {
+      return res.status(500).json({
+        error: "Model did not return JSON",
+        raw: text,
+      });
+    }
+
+    const jsonText = text.slice(start, end + 1);
+    const data = JSON.parse(jsonText);
 
     return res.status(200).json(data);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Error analyzing message" });
+    return res.status(500).json({
+      error: "Error analyzing message",
+      details: error.message,
+    });
   }
 }

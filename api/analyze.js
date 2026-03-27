@@ -17,9 +17,12 @@ export default async function handler(req, res) {
     }
 
     const prompt = `
-Analyze this message for manipulation.
+Analyze the following message for emotional manipulation.
 
-Return JSON:
+You MUST return ONLY valid JSON.
+Do not include any text before or after the JSON.
+
+Format:
 {
   "toxicity_score": number,
   "detected": ["Gaslighting", "Manipulation"],
@@ -38,9 +41,9 @@ ${message}
       messages: [
         {
           role: "user",
-          content: prompt
-        }
-      ]
+          content: prompt,
+        },
+      ],
     });
 
     const text = response.content[0].text;
@@ -48,8 +51,8 @@ ${message}
     const data = JSON.parse(text);
 
     return res.status(200).json(data);
-
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ error: "Error analyzing message" });
   }
 }

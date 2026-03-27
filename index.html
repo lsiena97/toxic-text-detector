@@ -1,1366 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Toxic Text Detector — Find Out What He's Really Saying</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-<style>
-  :root {
-    --blush:    #f7ded8;
-    --rose:     #e8b4a8;
-    --deep-rose:#c47a6b;
-    --warm:     #fdf6f0;
-    --stone:    #4a3f3a;
-    --muted:    #8a7570;
-    --ink:      #2e2320;
-    --cream:    #fff9f5;
-    --score-red:#d45c4e;
-    --score-amber:#e8a55c;
-    --score-green:#7ab892;
-    --white:    #ffffff;
-    --shadow:   0 4px 32px rgba(74,63,58,.08);
-    --shadow-lg:0 12px 48px rgba(74,63,58,.14);
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--cream);
-    color: var(--stone);
-    line-height: 1.65;
-    overflow-x: hidden;
-  }
-
-  /* ─── NAV ─────────────────────────────────── */
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 1rem 2rem;
-    background: rgba(253,246,240,.92);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(232,180,168,.3);
-  }
-  .nav-logo {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.15rem;
-    color: var(--ink);
-    letter-spacing: -.02em;
-  }
-  .nav-logo span { color: var(--deep-rose); }
-  .nav-cta {
-    background: var(--deep-rose);
-    color: #fff;
-    border: none;
-    padding: .55rem 1.25rem;
-    border-radius: 100px;
-    font-size: .85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background .2s, transform .15s;
-  }
-  .nav-cta:hover { background: #b86a5d; transform: translateY(-1px); }
-
-  /* ─── HERO ────────────────────────────────── */
-  .hero {
-    min-height: 100svh;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center;
-    padding: 7rem 1.5rem 5rem;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero-blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: .45;
-    pointer-events: none;
-  }
-  .hero-blob-1 {
-    width: 520px; height: 520px;
-    background: radial-gradient(circle, #f7ded8, #fce6e0);
-    top: -120px; left: -100px;
-    animation: drift 9s ease-in-out infinite alternate;
-  }
-  .hero-blob-2 {
-    width: 380px; height: 380px;
-    background: radial-gradient(circle, #e8c8c0, #fde6d6);
-    bottom: -80px; right: -80px;
-    animation: drift 11s ease-in-out infinite alternate-reverse;
-  }
-  @keyframes drift {
-    from { transform: translate(0,0) scale(1); }
-    to   { transform: translate(30px,20px) scale(1.06); }
-  }
-
-  .hero-eyebrow {
-    display: inline-block;
-    background: var(--blush);
-    color: var(--deep-rose);
-    font-size: .8rem;
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    padding: .35rem 1rem;
-    border-radius: 100px;
-    margin-bottom: 1.75rem;
-    border: 1px solid var(--rose);
-  }
-
-  .hero h1 {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(2.4rem, 6vw, 4.2rem);
-    line-height: 1.15;
-    color: var(--ink);
-    max-width: 760px;
-    letter-spacing: -.03em;
-    margin-bottom: 1.5rem;
-    position: relative;
-  }
-  .hero h1 em {
-    font-style: italic;
-    color: var(--deep-rose);
-  }
-
-  .hero-sub {
-    font-size: 1.15rem;
-    color: var(--muted);
-    max-width: 500px;
-    margin: 0 auto 2.5rem;
-    font-weight: 400;
-  }
-
-  .btn-primary {
-    display: inline-flex; align-items: center; gap: .5rem;
-    background: var(--deep-rose);
-    color: #fff;
-    border: none;
-    padding: 1rem 2.2rem;
-    border-radius: 100px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: none;
-    transition: background .2s, transform .15s, box-shadow .2s;
-    box-shadow: 0 6px 24px rgba(196,122,107,.3);
-  }
-  .btn-primary:hover {
-    background: #b86a5d;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 32px rgba(196,122,107,.38);
-  }
-  .btn-primary svg { width: 18px; height: 18px; }
-
-  .hero-tension {
-    margin-top: 1.1rem;
-    font-size: .88rem;
-    color: var(--deep-rose);
-    font-weight: 500;
-    letter-spacing: -.01em;
-  }
-  .hero-trust {
-    margin-top: .85rem;
-    font-size: .82rem;
-    color: var(--muted);
-    display: flex; align-items: center; justify-content: center; gap: .5rem;
-  }
-  .hero-trust svg { color: var(--score-green); }
-
-  /* ─── PAIN SECTION ────────────────────────── */
-  .section { padding: 5rem 1.5rem; }
-  .section-label {
-    font-size: .78rem;
-    font-weight: 600;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--deep-rose);
-    margin-bottom: .75rem;
-    text-align: center;
-  }
-  .section-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(1.7rem, 3.5vw, 2.6rem);
-    color: var(--ink);
-    letter-spacing: -.03em;
-    text-align: center;
-    max-width: 640px;
-    margin: 0 auto 1rem;
-    line-height: 1.2;
-  }
-  .section-sub {
-    text-align: center;
-    color: var(--muted);
-    max-width: 520px;
-    margin: 0 auto 3rem;
-    font-size: 1rem;
-  }
-
-  .pain-bg {
-    background: var(--warm);
-    border-top: 1px solid var(--blush);
-    border-bottom: 1px solid var(--blush);
-  }
-
-  .pain-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-  .pain-card {
-    background: var(--white);
-    border: 1px solid var(--blush);
-    border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    display: flex; align-items: flex-start; gap: .85rem;
-    animation: fadeUp .5s ease both;
-    box-shadow: var(--shadow);
-  }
-  .pain-card:nth-child(2) { animation-delay:.05s }
-  .pain-card:nth-child(3) { animation-delay:.1s }
-  .pain-card:nth-child(4) { animation-delay:.15s }
-  .pain-card:nth-child(5) { animation-delay:.2s }
-  .pain-card:nth-child(6) { animation-delay:.25s }
-  @keyframes fadeUp {
-    from { opacity:0; transform: translateY(18px); }
-    to   { opacity:1; transform: translateY(0); }
-  }
-
-  .pain-icon {
-    font-size: 1.3rem;
-    flex-shrink: 0;
-    margin-top: .1rem;
-  }
-  .pain-card p {
-    font-size: .95rem;
-    color: var(--stone);
-    line-height: 1.5;
-  }
-  .pain-card strong { color: var(--ink); font-weight: 600; }
-
-  /* ─── DEMO SECTION ────────────────────────── */
-  .demo-wrap {
-    max-width: 720px;
-    margin: 0 auto;
-    background: var(--white);
-    border-radius: 24px;
-    border: 1px solid var(--blush);
-    overflow: hidden;
-    box-shadow: var(--shadow-lg);
-  }
-
-  .demo-input-area {
-    padding: 1.75rem 2rem;
-    border-bottom: 1px solid var(--blush);
-    background: #fff;
-  }
-  .demo-input-label {
-    font-size: .8rem;
-    font-weight: 600;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: .6rem;
-  }
-  .demo-message-bubble {
-    background: #f0f4f9;
-    border-radius: 18px 18px 18px 4px;
-    padding: 1rem 1.25rem;
-    font-size: .97rem;
-    color: var(--stone);
-    font-style: italic;
-    border: 1px solid #e4eaf2;
-    max-width: 85%;
-    position: relative;
-  }
-  .demo-message-bubble::before {
-    content: '"';
-    font-size: 3rem;
-    color: var(--rose);
-    opacity: .35;
-    position: absolute;
-    top: -6px; left: 6px;
-    line-height: 1;
-    font-family: 'DM Serif Display', serif;
-  }
-
-  .demo-output {
-    padding: 1.75rem 2rem;
-  }
-  .score-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: .75rem;
-  }
-  .score-label {
-    font-size: .8rem;
-    font-weight: 600;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .score-number {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.4rem;
-    color: var(--score-red);
-    line-height: 1;
-  }
-  .score-number span {
-    font-size: 1.1rem;
-    color: var(--muted);
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 400;
-  }
-
-  .score-bar-track {
-    height: 10px;
-    background: #f0e8e4;
-    border-radius: 100px;
-    overflow: hidden;
-    margin-bottom: 1.5rem;
-  }
-  .score-bar-fill {
-    height: 100%;
-    border-radius: 100px;
-    background: linear-gradient(90deg, var(--score-amber), var(--score-red));
-    width: 0%;
-    transition: width 1.4s cubic-bezier(.25,.46,.45,.94);
-  }
-
-  .detected-tags {
-    display: flex; flex-wrap: wrap; gap: .5rem;
-    margin-bottom: 1.5rem;
-  }
-  .tag {
-    display: inline-flex; align-items: center; gap: .35rem;
-    padding: .35rem .9rem;
-    border-radius: 100px;
-    font-size: .8rem;
-    font-weight: 600;
-  }
-  .tag-danger { background: #fdecea; color: #c0392b; border: 1px solid #f5c6c2; }
-  .tag-warning { background: #fef3e6; color: #a0601a; border: 1px solid #f5d9a8; }
-  .tag-purple { background: #f0eeff; color: #5a4ab0; border: 1px solid #d6cfff; }
-
-  .analysis-block {
-    background: var(--warm);
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-    margin-bottom: 1rem;
-    border-left: 3px solid var(--deep-rose);
-  }
-  .analysis-block-label {
-    font-size: .75rem;
-    font-weight: 700;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    color: var(--deep-rose);
-    margin-bottom: .4rem;
-  }
-  .analysis-block p { font-size: .93rem; color: var(--stone); }
-
-  .reply-block {
-    background: linear-gradient(135deg, #e8f5ee, #f0faf4);
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-    border-left: 3px solid var(--score-green);
-  }
-  .reply-block-label {
-    font-size: .75rem;
-    font-weight: 700;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    color: #4a8a63;
-    margin-bottom: .4rem;
-  }
-  .reply-block p { font-size: .93rem; color: #2e5040; font-style: italic; }
-
-  /* ─── TRY IT LIVE ─────────────────────────── */
-  .tryit-wrap {
-    max-width: 720px;
-    margin: 0 auto;
-  }
-  .tryit-textarea {
-    width: 100%;
-    min-height: 130px;
-    border: 1.5px solid var(--rose);
-    border-radius: 14px;
-    padding: 1rem 1.25rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: .97rem;
-    color: var(--ink);
-    background: var(--white);
-    resize: vertical;
-    outline: none;
-    transition: border-color .2s, box-shadow .2s;
-    line-height: 1.6;
-  }
-  .tryit-textarea::placeholder { color: #c4aaa4; }
-  .tryit-textarea:focus {
-    border-color: var(--deep-rose);
-    box-shadow: 0 0 0 3px rgba(196,122,107,.12);
-  }
-  .tryit-btn {
-    display: block;
-    width: 100%;
-    margin-top: .85rem;
-    background: var(--deep-rose);
-    color: #fff;
-    border: none;
-    padding: .95rem 1.5rem;
-    border-radius: 12px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background .2s, transform .15s;
-  }
-  .tryit-btn:hover { background: #b86a5d; transform: translateY(-1px); }
-  .tryit-result { margin-top: 1.5rem; display: none; }
-  .tryit-result.show { display: block; }
-
-  /* ─── REAL MESSAGES SECTION ──────────────── */
-  .realmsgs-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.1rem;
-    max-width: 960px;
-    margin: 0 auto;
-  }
-  .realmsg-card {
-    background: var(--white);
-    border: 1px solid var(--blush);
-    border-radius: 18px;
-    padding: 1.25rem;
-    box-shadow: var(--shadow);
-    transition: transform .2s;
-  }
-  .realmsg-card:hover { transform: translateY(-3px); }
-  .realmsg-bubble {
-    background: #f0f4f9;
-    border: 1px solid #e4eaf2;
-    border-radius: 14px 14px 14px 4px;
-    padding: .75rem 1rem;
-    font-size: .93rem;
-    font-style: italic;
-    color: var(--stone);
-    margin-bottom: 1rem;
-  }
-  .realmsg-score-row {
-    display: flex; align-items: center; gap: .75rem;
-    margin-bottom: .6rem;
-  }
-  .realmsg-score {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.05rem;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .realmsg-mini-bar {
-    flex: 1; height: 6px;
-    background: #f0e8e4;
-    border-radius: 100px;
-    overflow: hidden;
-  }
-  .realmsg-mini-fill {
-    height: 100%;
-    border-radius: 100px;
-    transition: width 1.2s cubic-bezier(.25,.46,.45,.94);
-  }
-  .realmsg-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .65rem; }
-  .realmsg-note { font-size: .82rem; color: var(--muted); line-height: 1.45; }
-
-  /* ─── HOW IT WORKS ────────────────────────── */
-  .steps-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    max-width: 560px;
-    margin: 0 auto;
-    position: relative;
-  }
-  .step {
-    display: flex; gap: 1.5rem; align-items: flex-start;
-    padding: 0 0 2.5rem;
-    position: relative;
-  }
-  .step:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    left: 22px; top: 48px; bottom: 0;
-    width: 2px;
-    background: linear-gradient(180deg, var(--rose), transparent);
-  }
-  .step-num {
-    flex-shrink: 0;
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: var(--blush);
-    border: 2px solid var(--rose);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.15rem;
-    color: var(--deep-rose);
-  }
-  .step-body h3 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.2rem;
-    color: var(--ink);
-    margin-bottom: .3rem;
-  }
-  .step-body p { font-size: .93rem; color: var(--muted); }
-
-  /* ─── BENEFITS ────────────────────────────── */
-  .benefits-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.25rem;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-  .benefit-card {
-    background: var(--white);
-    border: 1px solid var(--blush);
-    border-radius: 18px;
-    padding: 1.75rem 1.5rem;
-    text-align: center;
-    box-shadow: var(--shadow);
-    transition: transform .2s, box-shadow .2s;
-  }
-  .benefit-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-  }
-  .benefit-icon {
-    font-size: 2rem;
-    margin-bottom: .75rem;
-    display: block;
-  }
-  .benefit-card h3 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.1rem;
-    color: var(--ink);
-    margin-bottom: .4rem;
-  }
-  .benefit-card p { font-size: .88rem; color: var(--muted); line-height: 1.5; }
-
-  /* ─── TESTIMONIALS ────────────────────────── */
-  .testimonials-bg {
-    background: var(--warm);
-    border-top: 1px solid var(--blush);
-    border-bottom: 1px solid var(--blush);
-  }
-  .testimonials-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.25rem;
-    max-width: 960px;
-    margin: 0 auto;
-  }
-  .testimonial-card {
-    background: var(--white);
-    border: 1px solid var(--blush);
-    border-radius: 18px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow);
-    position: relative;
-  }
-  .testimonial-card::before {
-    content: '"';
-    font-family: 'DM Serif Display', serif;
-    font-size: 4rem;
-    color: var(--rose);
-    opacity: .4;
-    position: absolute;
-    top: .25rem; left: 1rem;
-    line-height: 1;
-  }
-  .testimonial-text {
-    font-size: .93rem;
-    color: var(--stone);
-    line-height: 1.6;
-    margin-bottom: 1rem;
-    padding-top: 1rem;
-  }
-  .testimonial-author {
-    display: flex; align-items: center; gap: .75rem;
-  }
-  .author-avatar {
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    background: var(--blush);
-    border: 2px solid var(--rose);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem;
-  }
-  .author-info strong {
-    display: block;
-    font-size: .88rem;
-    color: var(--ink);
-    font-weight: 600;
-  }
-  .author-info span { font-size: .78rem; color: var(--muted); }
-  .stars { color: #f4a43e; font-size: .85rem; margin-bottom: .15rem; }
-
-  /* ─── CTA SECTION ─────────────────────────── */
-  .cta-section {
-    background: linear-gradient(135deg, var(--blush) 0%, #fce8e1 50%, var(--warm) 100%);
-    text-align: center;
-    padding: 6rem 1.5rem;
-    position: relative;
-    overflow: hidden;
-  }
-  .cta-section::before {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%,-50%);
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(232,180,168,.35), transparent 70%);
-    pointer-events: none;
-  }
-  .cta-section h2 {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(1.9rem, 4vw, 3rem);
-    color: var(--ink);
-    margin-bottom: .75rem;
-    letter-spacing: -.03em;
-  }
-  .cta-section h2 em { font-style: italic; color: var(--deep-rose); }
-  .cta-section p {
-    color: var(--muted);
-    font-size: 1.05rem;
-    margin-bottom: 2.25rem;
-    max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .cta-note {
-    margin-top: 1.25rem;
-    font-size: .82rem;
-    color: var(--muted);
-  }
-
-  /* ─── PRICING ─────────────────────────────── */
-  .pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.5rem;
-    max-width: 640px;
-    margin: 0 auto;
-  }
-  .pricing-card {
-    border-radius: 22px;
-    padding: 2rem 1.75rem;
-    border: 1.5px solid var(--blush);
-    background: var(--white);
-    text-align: center;
-    box-shadow: var(--shadow);
-    position: relative;
-    transition: transform .2s;
-  }
-  .pricing-card:hover { transform: translateY(-4px); }
-  .pricing-card.featured {
-    border-color: var(--deep-rose);
-    background: var(--ink);
-    color: #fff;
-  }
-  .pricing-badge {
-    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-    background: var(--deep-rose);
-    color: #fff;
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    padding: .3rem .9rem;
-    border-radius: 100px;
-    white-space: nowrap;
-  }
-  .pricing-name {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.35rem;
-    margin-bottom: .5rem;
-  }
-  .pricing-card.featured .pricing-name { color: #fff; }
-  .pricing-price {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.6rem;
-    color: var(--deep-rose);
-    line-height: 1;
-    margin-bottom: .3rem;
-  }
-  .pricing-card.featured .pricing-price { color: var(--blush); }
-  .pricing-per { font-size: .82rem; color: var(--muted); margin-bottom: 1.5rem; }
-  .pricing-card.featured .pricing-per { color: #9e8a85; }
-  .pricing-features {
-    list-style: none;
-    text-align: left;
-    margin-bottom: 1.75rem;
-  }
-  .pricing-features li {
-    display: flex; align-items: center; gap: .6rem;
-    font-size: .9rem;
-    padding: .45rem 0;
-    border-bottom: 1px solid var(--blush);
-    color: var(--stone);
-  }
-  .pricing-card.featured .pricing-features li {
-    color: #c8b8b2;
-    border-bottom-color: rgba(255,255,255,.08);
-  }
-  .pricing-features li:last-child { border-bottom: none; }
-  .check { color: var(--score-green); font-weight: 700; }
-  .pricing-card.featured .check { color: #82d4a0; }
-  .btn-pricing {
-    display: block;
-    width: 100%;
-    padding: .85rem 1rem;
-    border-radius: 12px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: .95rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: background .2s, transform .15s;
-  }
-  .btn-pricing-free {
-    background: var(--blush);
-    color: var(--deep-rose);
-  }
-  .btn-pricing-free:hover { background: var(--rose); }
-  .btn-pricing-paid {
-    background: var(--deep-rose);
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(196,122,107,.3);
-  }
-  .btn-pricing-paid:hover { background: #b86a5d; transform: translateY(-1px); }
-
-  /* ─── FOOTER ──────────────────────────────── */
-  footer {
-    background: var(--ink);
-    color: #9e8a85;
-    text-align: center;
-    padding: 2.5rem 1.5rem;
-  }
-  footer .footer-logo {
-    font-family: 'DM Serif Display', serif;
-    color: var(--blush);
-    font-size: 1.1rem;
-    margin-bottom: .5rem;
-  }
-  footer .footer-tagline { font-size: .85rem; margin-bottom: 1.25rem; }
-  footer .footer-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
-  footer .footer-links a { font-size: .82rem; color: #7a6a66; text-decoration: none; transition: color .2s; }
-  footer .footer-links a:hover { color: var(--blush); }
-  footer .footer-copy { margin-top: 1.5rem; font-size: .78rem; color: #5a4e4a; }
-
-  /* ─── MODAL / OVERLAY ─────────────────────── */
-  .modal-overlay {
-    display: none;
-    position: fixed; inset: 0; z-index: 200;
-    background: rgba(46,35,32,.6);
-    backdrop-filter: blur(4px);
-    align-items: center; justify-content: center;
-    padding: 1rem;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--white);
-    border-radius: 24px;
-    padding: 2.25rem;
-    max-width: 540px;
-    width: 100%;
-    box-shadow: 0 24px 64px rgba(46,35,32,.2);
-    position: relative;
-    animation: modalIn .35s cubic-bezier(.34,1.56,.64,1) both;
-  }
-  @keyframes modalIn {
-    from { opacity:0; transform: scale(.9) translateY(20px); }
-    to   { opacity:1; transform: scale(1) translateY(0); }
-  }
-  .modal-close {
-    position: absolute; top: 1rem; right: 1rem;
-    background: var(--blush); border: none;
-    width: 32px; height: 32px; border-radius: 50%;
-    cursor: pointer; font-size: 1.1rem; color: var(--stone);
-    display: flex; align-items: center; justify-content: center;
-  }
-
-  /* ─── MISC ────────────────────────────────── */
-  .container { max-width: 1060px; margin: 0 auto; }
-  .text-center { text-align: center; }
-
-  @media (max-width: 600px) {
-    nav { padding: .85rem 1.25rem; }
-    .section { padding: 3.75rem 1.25rem; }
-    .hero { padding: 6rem 1.25rem 4rem; }
-    .demo-input-area, .demo-output { padding: 1.25rem; }
-    .demo-message-bubble { max-width: 100%; }
-    .pricing-grid { max-width: 340px; }
-    .realmsgs-grid { grid-template-columns: 1fr; max-width: 420px; }
-  }
-
-  /* Scroll reveal */
-  .reveal {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity .6s ease, transform .6s ease;
-  }
-  .reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-</style>
-</head>
-<body>
-
-<!-- NAV -->
-<nav>
-  <div class="nav-logo">Toxic<span>Text</span> Detector</div>
-  <button class="nav-cta" onclick="openModal()">Try It Free</button>
-</nav>
-
-<!-- ═══════════════════════════════════════════
-     1. HERO
-═══════════════════════════════════════════ -->
-<section class="hero">
-  <div class="hero-blob hero-blob-1"></div>
-  <div class="hero-blob hero-blob-2"></div>
-
-  <div class="hero-eyebrow">✦ 14,000+ women stopped second-guessing themselves.</div>
-
-  <p style="font-size:.95rem;color:var(--muted);margin-bottom:1rem;font-style:italic;letter-spacing:-.01em;">Read this before you reply to him.</p>
-
-  <h1>
-    This is why that text<br/>
-    <em>made you feel crazy.</em>
-  </h1>
-
-  <p class="hero-sub">
-    Paste his message. In seconds, AI tells you exactly which manipulation tactics he used — in plain language you can actually act on.
-  </p>
-
-  <button class="btn-primary" onclick="openModal()">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
-    Check This Text — It's Free
-  </button>
-
-  <p class="hero-tension">Most people miss the exact pattern that's affecting them. Don't.</p>
-
-  <p class="hero-trust">
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    Private & anonymous — your messages are never stored
-  </p>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     2. PAIN SECTION
-═══════════════════════════════════════════ -->
-<section class="section pain-bg">
-  <p class="section-label reveal">You've felt this before</p>
-  <h2 class="section-title reveal">That nagging feeling you can't shake</h2>
-  <p class="section-sub reveal">If any of these sound familiar, you're in the right place.</p>
-
-  <div class="pain-grid">
-    <div class="pain-card reveal">
-      <span class="pain-icon">🌀</span>
-      <p><strong>"Why do I feel guilty after reading this?"</strong> — You didn't do anything wrong, yet somehow it's all your fault.</p>
-    </div>
-    <div class="pain-card reveal">
-      <span class="pain-icon">😶</span>
-      <p><strong>"Am I overreacting… or is he manipulating me?"</strong> — You can't tell anymore. That confusion is the point.</p>
-    </div>
-    <div class="pain-card reveal">
-      <span class="pain-icon">🔄</span>
-      <p><strong>"He says I'm too sensitive."</strong> — Every time you bring something up, it somehow becomes about your emotions being 'too much.'</p>
-    </div>
-    <div class="pain-card reveal">
-      <span class="pain-icon">💬</span>
-      <p><strong>"He apologized, but it didn't feel like an apology."</strong> — It felt like it was really about making himself look better.</p>
-    </div>
-    <div class="pain-card reveal">
-      <span class="pain-icon">😶‍🌫️</span>
-      <p><strong>"I screenshot the message to send to my friends."</strong> — Because you need someone else to confirm what you already suspect.</p>
-    </div>
-    <div class="pain-card reveal">
-      <span class="pain-icon">💔</span>
-      <p><strong>"Something feels off, but I can't explain it."</strong> — The words seem fine on the surface, but the feeling underneath is not.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     3. DEMO SECTION
-═══════════════════════════════════════════ -->
-<section class="section">
-  <p class="section-label reveal">See it in action</p>
-  <h2 class="section-title reveal">This isn't accidental. It's patterned.</h2>
-  <p class="section-sub reveal">Here's what AI found inside a real message — and why it left her feeling like the problem.</p>
-
-  <div class="demo-wrap reveal" id="demo-section">
-    <div class="demo-input-area">
-      <div class="demo-input-label">His message</div>
-      <div class="demo-message-bubble">
-        I'm sorry you feel that way, but you're overthinking again. I've told you a hundred times — you always do this. I can't keep having this conversation. Maybe try therapy?
-      </div>
-    </div>
-
-    <div class="demo-output">
-      <div class="score-header">
-        <span class="score-label">Toxicity Score</span>
-        <span class="score-number" id="demo-score">0<span>/ 100</span></span>
-      </div>
-      <div class="score-bar-track">
-        <div class="score-bar-fill" id="demo-bar"></div>
-      </div>
-
-      <div class="detected-tags">
-        <span class="tag tag-danger">🚨 Gaslighting</span>
-        <span class="tag tag-danger">⚠️ Emotional Manipulation</span>
-        <span class="tag tag-warning">🔁 Deflection</span>
-        <span class="tag tag-purple">🪞 Narcissistic Dismissal</span>
-      </div>
-
-      <div class="analysis-block">
-        <div class="analysis-block-label">What's really happening</div>
-        <p>He's not apologizing — he's apologizing for your feelings while denying any responsibility. Phrases like "you always do this" and "you're overthinking" are designed to make you doubt your own perception. Suggesting therapy shifts focus to you being the problem. This is a textbook deflection strategy.</p>
-      </div>
-
-      <div class="analysis-block">
-        <div class="analysis-block-label">Emotional impact on you</div>
-        <p>You likely feel confused, blamed, and slightly ashamed — as if bringing this up was the mistake. That's exactly the intended effect. Your reaction was valid. His response was not.</p>
-      </div>
-
-      <div class="reply-block">
-        <div class="reply-block-label">✦ Suggested reply (calm & confident)</div>
-        <p>"I hear that you're frustrated. But telling me I'm overthinking instead of addressing what I said isn't working for me. I need us to actually talk about this, not dismiss it."</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     TRY IT LIVE (interactive demo)
-═══════════════════════════════════════════ -->
-<section class="section pain-bg">
-  <p class="section-label reveal">Try it yourself</p>
-  <h2 class="section-title reveal">That message is still in your head for a reason.</h2>
-  <p class="section-sub reveal">Paste it here. Find out what's actually going on — before it keeps messing with you.</p>
-
-  <div class="tryit-wrap reveal">
-    <textarea
-      class="tryit-textarea"
-      id="userMessage"
-      placeholder="Paste the message you keep re-reading…"
-    ></textarea>
-    <button class="tryit-btn" onclick="analyzeMessage()">
-      ✦ Analyze This Message
-    </button>
-    <p style="text-align:center;font-size:.82rem;color:var(--muted);margin-top:.55rem;font-style:italic;">You've already read it twice. Just check.</p>
-    <p style="text-align:center;font-size:.82rem;color:var(--deep-rose);margin-top:.3rem;font-weight:500;">⚠️ Ignoring this now usually makes it worse.</p>
-
-    <div class="tryit-result" id="tryit-result">
-      <div class="demo-wrap">
-        <div class="demo-output">
-          <div class="score-header">
-            <span class="score-label">Toxicity Score</span>
-            <span class="score-number" id="live-score">0<span>/ 100</span></span>
-          </div>
-          <div class="score-bar-track">
-            <div class="score-bar-fill" id="live-bar"></div>
-          </div>
-          <div class="detected-tags" id="live-tags"></div>
-          <div class="analysis-block">
-            <div class="analysis-block-label">What's really happening</div>
-            <p id="live-explanation"></p>
-          </div>
-          <div class="analysis-block">
-            <div class="analysis-block-label">Emotional impact on you</div>
-            <p id="live-impact"></p>
-          </div>
-          <div class="reply-block">
-            <div class="reply-block-label">✦ Suggested reply</div>
-            <p id="live-reply"></p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     NEW: REAL MESSAGES ANALYZED
-═══════════════════════════════════════════ -->
-<section class="section">
-  <p class="section-label reveal">Sound familiar?</p>
-  <h2 class="section-title reveal">Real messages we've analyzed</h2>
-  <p class="section-sub reveal">You've seen these. You just didn't notice what they were doing to you.</p>
-
-  <div class="realmsgs-grid reveal">
-
-    <div class="realmsg-card">
-      <div class="realmsg-bubble">"You're overthinking again."</div>
-      <div class="realmsg-result">
-        <div class="realmsg-score-row">
-          <span class="realmsg-score" style="color:#d45c4e">79% toxic</span>
-          <div class="realmsg-mini-bar"><div class="realmsg-mini-fill" style="width:79%;background:linear-gradient(90deg,#e8a55c,#d45c4e)"></div></div>
-        </div>
-        <div class="realmsg-tags">
-          <span class="tag tag-danger" style="font-size:.72rem;padding:.25rem .65rem">🚨 Gaslighting</span>
-          <span class="tag tag-warning" style="font-size:.72rem;padding:.25rem .65rem">🔁 Dismissal</span>
-        </div>
-        <p class="realmsg-note">Makes you doubt your own mind. That's the point.</p>
-      </div>
-    </div>
-
-    <div class="realmsg-card">
-      <div class="realmsg-bubble">"I never said that."</div>
-      <div class="realmsg-result">
-        <div class="realmsg-score-row">
-          <span class="realmsg-score" style="color:#c0392b">91% toxic</span>
-          <div class="realmsg-mini-bar"><div class="realmsg-mini-fill" style="width:91%;background:linear-gradient(90deg,#e8a55c,#c0392b)"></div></div>
-        </div>
-        <div class="realmsg-tags">
-          <span class="tag tag-danger" style="font-size:.72rem;padding:.25rem .65rem">🚨 Gaslighting</span>
-          <span class="tag tag-purple" style="font-size:.72rem;padding:.25rem .65rem">🪞 Reality Denial</span>
-        </div>
-        <p class="realmsg-note">Denying something you both know happened. Designed to make you feel unstable.</p>
-      </div>
-    </div>
-
-    <div class="realmsg-card">
-      <div class="realmsg-bubble">"You're too sensitive."</div>
-      <div class="realmsg-result">
-        <div class="realmsg-score-row">
-          <span class="realmsg-score" style="color:#d45c4e">76% toxic</span>
-          <div class="realmsg-mini-bar"><div class="realmsg-mini-fill" style="width:76%;background:linear-gradient(90deg,#e8a55c,#d45c4e)"></div></div>
-        </div>
-        <div class="realmsg-tags">
-          <span class="tag tag-danger" style="font-size:.72rem;padding:.25rem .65rem">⚠️ Manipulation</span>
-          <span class="tag tag-purple" style="font-size:.72rem;padding:.25rem .65rem">🪞 Blame Shift</span>
-        </div>
-        <p class="realmsg-note">Your reaction becomes the issue. His behavior disappears from the conversation.</p>
-      </div>
-    </div>
-
-    <div class="realmsg-card">
-      <div class="realmsg-bubble">"I guess I'm just the worst, then."</div>
-      <div class="realmsg-result">
-        <div class="realmsg-score-row">
-          <span class="realmsg-score" style="color:#a0601a">68% toxic</span>
-          <div class="realmsg-mini-bar"><div class="realmsg-mini-fill" style="width:68%;background:linear-gradient(90deg,#e8c05c,#e8a55c)"></div></div>
-        </div>
-        <div class="realmsg-tags">
-          <span class="tag tag-warning" style="font-size:.72rem;padding:.25rem .65rem">🔁 Guilt-Tripping</span>
-          <span class="tag tag-purple" style="font-size:.72rem;padding:.25rem .65rem">🪞 Victim Framing</span>
-        </div>
-        <p class="realmsg-note">Flips the conversation so you end up comforting him instead of being heard.</p>
-      </div>
-    </div>
-
-    <div class="realmsg-card">
-      <div class="realmsg-bubble">"You always do this to me."</div>
-      <div class="realmsg-result">
-        <div class="realmsg-score-row">
-          <span class="realmsg-score" style="color:#d45c4e">82% toxic</span>
-          <div class="realmsg-mini-bar"><div class="realmsg-mini-fill" style="width:82%;background:linear-gradient(90deg,#e8a55c,#d45c4e)"></div></div>
-        </div>
-        <div class="realmsg-tags">
-          <span class="tag tag-danger" style="font-size:.72rem;padding:.25rem .65rem">⚠️ Manipulation</span>
-          <span class="tag tag-warning" style="font-size:.72rem;padding:.25rem .65rem">🔁 Generalization</span>
-        </div>
-        <p class="realmsg-note">Uses "always" to make you a pattern — not a person with a valid concern.</p>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     4. HOW IT WORKS
-═══════════════════════════════════════════ -->
-<section class="section">
-  <p class="section-label reveal">Simple & private</p>
-  <h2 class="section-title reveal">How it works</h2>
-  <p class="section-sub reveal">Three steps. No account needed. Clarity in under a minute.</p>
-
-  <div class="steps-wrap">
-    <div class="step reveal">
-      <div class="step-num">1</div>
-      <div class="step-body">
-        <h3>Paste his message</h3>
-        <p>Copy and paste any message — text, DM, email. The weirder it felt, the more important it is to analyze.</p>
-      </div>
-    </div>
-    <div class="step reveal">
-      <div class="step-num">2</div>
-      <div class="step-body">
-        <h3>AI reads between the lines</h3>
-        <p>Our model scans for gaslighting patterns, passive-aggression, manipulation tactics, and emotional coercion.</p>
-      </div>
-    </div>
-    <div class="step reveal">
-      <div class="step-num">3</div>
-      <div class="step-body">
-        <h3>Get clarity instantly</h3>
-        <p>See a toxicity score, what behaviors were detected, why they affect you — and a confident response you can actually use.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     5. BENEFITS
-═══════════════════════════════════════════ -->
-<section class="section pain-bg">
-  <p class="section-label reveal">What changes for you</p>
-  <h2 class="section-title reveal">From confusion to clarity</h2>
-  <p class="section-sub reveal">This isn't about deciding to leave or stay. It's about seeing clearly.</p>
-
-  <div class="benefits-grid">
-    <div class="benefit-card reveal">
-      <span class="benefit-icon">🛑</span>
-      <h3>Stop second-guessing yourself</h3>
-      <p>Get an objective read on his message so you can trust your instincts again.</p>
-    </div>
-    <div class="benefit-card reveal">
-      <span class="benefit-icon">🔍</span>
-      <h3>See manipulation the moment it happens</h3>
-      <p>Named patterns are easier to handle. Invisible ones eat you alive.</p>
-    </div>
-    <div class="benefit-card reveal">
-      <span class="benefit-icon">💬</span>
-      <h3>Respond with confidence</h3>
-      <p>Get a calm, clear suggested reply that sets a boundary without escalating.</p>
-    </div>
-    <div class="benefit-card reveal">
-      <span class="benefit-icon">🛡️</span>
-      <h3>Protect your emotional energy</h3>
-      <p>Know when to engage, when to disengage, and when a message isn't worth your peace.</p>
-    </div>
-    <div class="benefit-card reveal">
-      <span class="benefit-icon">🪟</span>
-      <h3>Understand the bigger pattern</h3>
-      <p>One message is a moment. Multiple analyses reveal a relationship dynamic.</p>
-    </div>
-    <div class="benefit-card reveal">
-      <span class="benefit-icon">🤫</span>
-      <h3>Completely private</h3>
-      <p>No account. No storage. No one will ever know you checked.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     6. TESTIMONIALS
-═══════════════════════════════════════════ -->
-<section class="section testimonials-bg">
-  <p class="section-label reveal">Real women, real clarity</p>
-  <h2 class="section-title reveal">"I thought I was the problem."</h2>
-  <p class="section-sub reveal">You're not. And they figured that out.</p>
-
-  <div class="testimonials-grid">
-    <div class="testimonial-card reveal">
-      <div class="stars">★★★★★</div>
-      <p class="testimonial-text">
-        I'd been reading the same text for three days, asking friends what they thought. This tool gave me the exact language for what was happening. Gaslighting. I finally had a word for it.
-      </p>
-      <div class="testimonial-author">
-        <div class="author-avatar">🌸</div>
-        <div class="author-info">
-          <strong>Mariana T.</strong>
-          <span>São Paulo, Brazil</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="testimonial-card reveal">
-      <div class="stars">★★★★★</div>
-      <p class="testimonial-text">
-        He always made me feel like I was too sensitive. This literally showed me — with a score — that no, his messages were the problem. I cried a little. Then I felt free.
-      </p>
-      <div class="testimonial-author">
-        <div class="author-avatar">🌷</div>
-        <div class="author-info">
-          <strong>Ashley R.</strong>
-          <span>Atlanta, USA</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="testimonial-card reveal">
-      <div class="stars">★★★★★</div>
-      <p class="testimonial-text">
-        The suggested reply was exactly what I needed. Calm, firm, no drama. I sent it and for the first time I didn't feel like I was the one who made things worse.
-      </p>
-      <div class="testimonial-author">
-        <div class="author-avatar">🌻</div>
-        <div class="author-info">
-          <strong>Sophie M.</strong>
-          <span>London, UK</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="testimonial-card reveal">
-      <div class="stars">★★★★★</div>
-      <p class="testimonial-text">
-        I've been in therapy for two years trying to explain how he talks to me. This tool explained it in 10 seconds. Passive-aggressive, deflection, emotional manipulation. Done.
-      </p>
-      <div class="testimonial-author">
-        <div class="author-avatar">🌺</div>
-        <div class="author-info">
-          <strong>Camille D.</strong>
-          <span>Paris, France</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="testimonial-card reveal">
-      <div class="stars">★★★★★</div>
-      <p class="testimonial-text">
-        Showed this to my sister who was going through something similar. She analyzed 7 messages in one night. We both agreed: we're done letting men make us feel crazy.
-      </p>
-      <div class="testimonial-author">
-        <div class="author-avatar">🌹</div>
-        <div class="author-info">
-          <strong>Priya K.</strong>
-          <span>Mumbai, India</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     7. CTA SECTION
-═══════════════════════════════════════════ -->
-<section class="cta-section">
-  <h2 class="reveal">You already know<br/><em>something is off.</em><br/>Now see exactly why.</h2>
-  <p class="reveal">That instinct you keep second-guessing? It's been right. Let the AI give it a name — so you can finally stop doubting yourself and start trusting what you feel.</p>
-  <button class="btn-primary reveal" onclick="openModal()" style="margin: 0 auto;">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
-    Check This Text Now — It's Free
-  </button>
-  <p class="cta-note reveal">Don't ignore that feeling again. First analysis is free — no account, no card.</p>
-</section>
-
-<div style="background:var(--ink);padding:1.25rem 1.5rem;text-align:center;">
-  <p style="font-size:1rem;color:var(--blush);max-width:560px;margin:0 auto;font-family:'DM Serif Display',serif;font-style:italic;letter-spacing:-.02em;">
-    "Clarity changes how you respond — and what you tolerate."
-  </p>
-</div>
-
-<div style="background:var(--blush);border-top:1px solid var(--rose);border-bottom:1px solid var(--rose);padding:1.1rem 1.5rem;text-align:center;">
-  <p style="font-size:.92rem;color:var(--stone);max-width:580px;margin:0 auto;">
-    💡 <strong>Most users come back to analyze multiple messages from the same person.</strong> One message is a data point. A pattern is the truth.
-  </p>
-</div>
-
-<!-- ═══════════════════════════════════════════
-     8. PRICING
-═══════════════════════════════════════════ -->
-<section class="section">
-  <p class="section-label reveal">Simple pricing</p>
-  <h2 class="section-title reveal">Start free. Know yourself better.</h2>
-  <p class="section-sub reveal">One payment. No subscription. Use it whenever you need it — and you will need it again.</p>
-
-  <div class="pricing-grid">
-    <div class="pricing-card reveal">
-      <div class="pricing-name">Free</div>
-      <div class="pricing-price">$0</div>
-      <div class="pricing-per">Try it right now, no card needed</div>
-      <ul class="pricing-features">
-        <li><span class="check">✓</span> Understand this one message</li>
-        <li><span class="check">✓</span> See what he's actually doing</li>
-        <li><span class="check">✓</span> Know if your gut was right</li>
-        <li><span class="check">✓</span> Get a confident reply to send</li>
-        <li><span class="check">✓</span> Private &amp; anonymous, always</li>
-      </ul>
-      <button class="btn-pricing btn-pricing-free" onclick="openModal()">Try It Free</button>
-    </div>
-
-    <div class="pricing-card featured reveal">
-      <div class="pricing-badge">Most Chosen</div>
-      <div class="pricing-name" style="color:#fff">Premium</div>
-      <div class="pricing-price">$9.99</div>
-      <div class="pricing-per">one-time · never pay again</div>
-      <ul class="pricing-features">
-        <li><span class="check">✓</span> Understand every message — not just this one</li>
-        <li><span class="check">✓</span> Stop second-guessing yourself, for good</li>
-        <li><span class="check">✓</span> Know exactly what's happening every time</li>
-        <li><span class="check">✓</span> See the full pattern across all his messages</li>
-        <li><span class="check">✓</span> Confident reply for every situation</li>
-        <li><span class="check">✓</span> Save &amp; export your analyses</li>
-      </ul>
-      <button class="btn-pricing btn-pricing-paid" onclick="openModal()">Stop Second-Guessing — $9.99</button>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════
-     FOOTER
-═══════════════════════════════════════════ -->
-<footer>
-  <div class="footer-logo">ToxicText Detector</div>
-  <p class="footer-tagline">Clarity for women who trust their gut.</p>
-  <div class="footer-links">
-    <a href="#">Privacy Policy</a>
-    <a href="#">Terms of Service</a>
-    <a href="#">How It Works</a>
-    <a href="#">Contact</a>
-    <a href="#">FAQ</a>
-  </div>
-  <p class="footer-copy">© 2024 Toxic Text Detector. All rights reserved. For informational purposes only — not a substitute for professional mental health advice.</p>
-</footer>
-
-<!-- ═══════════════════════════════════════════
-     MODAL
-═══════════════════════════════════════════ -->
-<div class="modal-overlay" id="modal" onclick="closeOnOverlay(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <p class="section-label" style="text-align:left;margin-bottom:.5rem">✦ Free Analysis</p>
-    <h3 style="font-family:'DM Serif Display',serif;font-size:1.55rem;color:var(--ink);margin-bottom:.4rem;letter-spacing:-.02em;">Paste the message that's been in your head.</h3>
-    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1.25rem;">We'll name exactly what's happening — in plain language, in seconds. No judgment. Just clarity.</p>
-    <textarea
-      class="tryit-textarea"
-      id="modalMessage"
-      rows="5"
-      placeholder="Paste the message you keep re-reading… even the ones that 'sound fine' on the surface."
-    ></textarea>
-    <button class="tryit-btn" style="margin-top:.75rem" onclick="analyzeModal()">✦ Analyze This Message</button>
-    <div id="modal-result" style="margin-top:1.25rem;display:none;">
-      <div style="border-top:1px solid var(--blush);padding-top:1.25rem;">
-        <div class="score-header">
-          <span class="score-label">Toxicity Score</span>
-          <span class="score-number" id="modal-score">0<span>/ 100</span></span>
-        </div>
-        <div class="score-bar-track">
-          <div class="score-bar-fill" id="modal-bar"></div>
-        </div>
-        <div class="detected-tags" id="modal-tags"></div>
-        <div class="analysis-block">
-          <div class="analysis-block-label">What's really happening</div>
-          <p id="modal-explanation"></p>
-        </div>
-        <div class="reply-block">
-          <div class="reply-block-label">✦ Suggested reply</div>
-          <p id="modal-reply"></p>
-        </div>
-      </div>
-    </div>
-    <p style="font-size:.75rem;color:var(--muted);margin-top:.75rem;text-align:center;">🔒 Private. Never stored. Never shared.</p>
-  </div>
-</div>
-
 <script>
 /* ── Real Messages bar animation ──────────────── */
 const realMsgObserver = new IntersectionObserver(entries => {
@@ -1375,6 +12,7 @@ const realMsgObserver = new IntersectionObserver(entries => {
     }
   });
 }, { threshold: 0.2 });
+
 const realGrid = document.querySelector('.realmsgs-grid');
 if (realGrid) realMsgObserver.observe(realGrid);
 
@@ -1387,6 +25,7 @@ const observer = new IntersectionObserver(entries => {
     }
   });
 }, { threshold: 0.12 });
+
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
 /* ── Demo bar animation on scroll ─────────────── */
@@ -1400,132 +39,203 @@ const demoObserver = new IntersectionObserver(entries => {
     }
   });
 }, { threshold: 0.3 });
+
 const demoSection = document.getElementById('demo-section');
 if (demoSection) demoObserver.observe(demoSection);
 
 function animateScore(scoreId, barId, target, color) {
   const scoreEl = document.getElementById(scoreId);
   const barEl = document.getElementById(barId);
+
   let current = 0;
-  const step = target / 60;
-  barEl.style.width = target + '%';
+  const safeTarget = Math.max(0, Math.min(Number(target) || 0, 100));
+  const step = safeTarget / 60;
+
+  barEl.style.width = safeTarget + '%';
   barEl.style.background = color
     ? `linear-gradient(90deg, #e8a55c, ${color})`
     : 'linear-gradient(90deg, #e8a55c, #d45c4e)';
+
   const interval = setInterval(() => {
-    current = Math.min(current + step, target);
+    current = Math.min(current + step, safeTarget);
     scoreEl.innerHTML = Math.round(current) + '<span>/ 100</span>';
-    if (current >= target) clearInterval(interval);
+    if (current >= safeTarget) clearInterval(interval);
   }, 16);
 }
 
-/* ── Analysis Engine ───────────────────────────── */
-const patterns = [
-  {
-    keywords: ['sorry you feel','you feel that way','feel that'],
-    behaviors: ['<span class="tag tag-danger">🚨 Gaslighting</span>','<span class="tag tag-warning">🔁 Non-Apology</span>'],
-    score: 80,
-    explanation: "The phrase 'sorry you feel that way' is one of the most classic non-apologies. It acknowledges your feelings exist while simultaneously refusing to take responsibility for causing them. He's performing care without actually offering it.",
-    impact: "You probably feel dismissed and unsure if you even have the right to be upset. That confusion is the intended result — it's easier to manage you when you doubt yourself.",
-    reply: "I hear that you said sorry. But 'I'm sorry you feel that way' isn't addressing what actually happened. I need us to talk about the situation, not my reaction to it."
-  },
-  {
-    keywords: ['you always','you never','every time','you always do'],
-    behaviors: ['<span class="tag tag-danger">⚠️ Emotional Manipulation</span>','<span class="tag tag-warning">🔁 Generalization</span>'],
-    score: 72,
-    explanation: "'You always' and 'you never' are words designed to overwhelm you. When someone uses absolutes like this, they're no longer talking about the specific issue — they're building a case that you are the problem, fundamentally.",
-    impact: "It makes you feel like you're fighting a verdict, not a conversation. Like no matter what you do, you're guilty.",
-    reply: "I need us to talk about what happened today, not a pattern you've decided I have. That's not a fair way to discuss this."
-  },
-  {
-    keywords: ['too sensitive','oversensitive','overreacting','so dramatic','so emotional'],
-    behaviors: ['<span class="tag tag-danger">🚨 Gaslighting</span>','<span class="tag tag-purple">🪞 Dismissal</span>'],
-    score: 78,
-    explanation: "Calling someone 'too sensitive' is a way of making your emotional reaction — not his behavior — the issue being discussed. It's a redirect. Now you're defending your sensitivity instead of what actually bothered you.",
-    impact: "You end up feeling ashamed for having feelings at all. Over time, this trains you to suppress your own reactions before he even has to say anything.",
-    reply: "My reaction isn't the conversation I want to have. What I brought up was valid, and I'd like to discuss that — not whether I'm allowed to feel it."
-  },
-  {
-    keywords: ['you made me','you made me feel','look what you','because of you'],
-    behaviors: ['<span class="tag tag-danger">⚠️ Emotional Manipulation</span>','<span class="tag tag-warning">🔁 Blame Shifting</span>'],
-    score: 75,
-    explanation: "Phrases like 'you made me' transfer full responsibility for his emotions and choices onto you. Adults are responsible for their own responses. This framing positions you as controlling his internal world — which you're not.",
-    impact: "You feel responsible for his feelings and walk on eggshells trying not to 'trigger' him. This is an exhausting and unfair position to be put in.",
-    reply: "I care about how you feel. But I can't take responsibility for choices you make or emotions you experience. That's yours to own."
-  },
-  {
-    keywords: ['calm down','relax','breathe','you need to relax','chill'],
-    behaviors: ['<span class="tag tag-danger">🚨 Gaslighting</span>','<span class="tag tag-warning">🔁 Deflection</span>'],
-    score: 68,
-    explanation: "Telling someone to 'calm down' during an emotional conversation is a way of making the conversation about your composure instead of the actual issue. It signals that your feelings are out of proportion — before actually engaging with them.",
-    impact: "You feel like you have to perform calmness just to be taken seriously. Your legitimate feelings become a liability.",
-    reply: "I am calm. I want to talk about what I said. Can we do that?"
-  },
-  {
-    keywords: ['i was just joking','it was a joke','can\'t take a joke','humor','just kidding'],
-    behaviors: ['<span class="tag tag-warning">🔁 Deniability Tactic</span>','<span class="tag tag-purple">🪞 Passive-Aggression</span>'],
-    score: 62,
-    explanation: "'I was just joking' is one of the oldest ways to say something hurtful and then avoid accountability for it. If the 'joke' only lands at your expense, it wasn't really a joke — it was a message delivered with plausible deniability.",
-    impact: "You feel confused about whether you're allowed to be hurt, and you might even apologize for not 'getting the joke.' The hurt was real. The joke was a cover.",
-    reply: "Even if it was meant as a joke, it hurt me. That part isn't funny to me, and I'd like it if we could acknowledge that."
-  }
-];
+function getTagClass(label) {
+  const lower = String(label).toLowerCase();
 
-function detectPattern(text) {
-  const lower = text.toLowerCase();
-  for (const p of patterns) {
-    if (p.keywords.some(k => lower.includes(k))) return p;
+  if (
+    lower.includes('gaslighting') ||
+    lower.includes('manipulation') ||
+    lower.includes('emotional manipulation') ||
+    lower.includes('narciss')
+  ) {
+    return 'tag tag-danger';
   }
-  // Generic fallback
-  const wordCount = text.trim().split(/\s+/).length;
-  const score = Math.min(45 + Math.floor(wordCount / 3), 65);
-  return {
-    behaviors: ['<span class="tag tag-warning">🔁 Passive-Aggressive Tone</span>','<span class="tag tag-purple">🪞 Vague Wording</span>'],
-    score,
-    explanation: "While there's no single 'red flag' phrase here, the message has a dismissive undertone. Vague or non-committal language can be just as confusing as direct manipulation — especially if the pattern repeats.",
-    impact: "You may feel uncertain about where you stand, or like you're always waiting to see what mood he's in. That uncertainty has a cost.",
-    reply: "I'd appreciate it if we could communicate more directly. I want to understand where you're coming from, and I'd like you to understand me too."
+
+  if (
+    lower.includes('passive') ||
+    lower.includes('deflection') ||
+    lower.includes('dismiss') ||
+    lower.includes('blame') ||
+    lower.includes('generalization') ||
+    lower.includes('guilt') ||
+    lower.includes('warning')
+  ) {
+    return 'tag tag-warning';
+  }
+
+  return 'tag tag-purple';
+}
+
+function getTagEmoji(label) {
+  const lower = String(label).toLowerCase();
+
+  if (lower.includes('gaslighting')) return '🚨';
+  if (lower.includes('manipulation')) return '⚠️';
+  if (lower.includes('passive')) return '🪞';
+  if (lower.includes('narciss')) return '🪞';
+  if (lower.includes('deflection')) return '🔁';
+  if (lower.includes('dismiss')) return '🔁';
+  if (lower.includes('blame')) return '🔁';
+
+  return '✦';
+}
+
+function renderTags(containerId, tags) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+
+  (tags || []).forEach(tagText => {
+    const span = document.createElement('span');
+    span.className = getTagClass(tagText);
+    span.textContent = `${getTagEmoji(tagText)} ${tagText}`;
+    container.appendChild(span);
+  });
+}
+
+function renderApiResult(scoreId, barId, tagsId, expId, impactId, replyId, apiData, showImpact) {
+  const adapted = {
+    score: apiData?.toxicity_score ?? 0,
+    tags: apiData?.detected ?? [],
+    explanation: apiData?.explanation ?? 'No explanation returned.',
+    impact: apiData?.emotional_impact ?? '',
+    reply: apiData?.suggested_reply ?? 'No suggested reply returned.'
   };
-}
 
-function renderResult(scoreId, barId, tagsId, expId, impactId, replyId, text, showImpact) {
-  const result = detectPattern(text);
-  document.getElementById(tagsId).innerHTML = result.behaviors.join('');
-  document.getElementById(expId).textContent = result.explanation;
+  renderTags(tagsId, adapted.tags);
+  document.getElementById(expId).textContent = adapted.explanation;
+
   if (showImpact && impactId) {
-    const impEl = document.getElementById(impactId);
-    if (impEl) impEl.textContent = result.impact;
+    const impactEl = document.getElementById(impactId);
+    if (impactEl) impactEl.textContent = adapted.impact;
   }
-  document.getElementById(replyId).textContent = result.reply;
-  setTimeout(() => animateScore(scoreId, barId, result.score, '#d45c4e'), 100);
+
+  document.getElementById(replyId).textContent = adapted.reply;
+  document.getElementById(scoreId).innerHTML = '0<span>/ 100</span>';
+  document.getElementById(barId).style.width = '0%';
+
+  setTimeout(() => animateScore(scoreId, barId, adapted.score, '#d45c4e'), 100);
 }
 
-function analyzeMessage() {
-  const msg = document.getElementById('userMessage').value.trim();
-  if (!msg || msg.length < 10) {
-    document.getElementById('userMessage').style.borderColor = 'var(--deep-rose)';
-    document.getElementById('userMessage').placeholder = 'Please paste a message first…';
+async function callAnalysisAPI(message) {
+  const response = await fetch('/api/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Error analyzing message');
+  }
+
+  return data;
+}
+
+async function analyzeMessage() {
+  const textarea = document.getElementById('userMessage');
+  const msg = textarea.value.trim();
+
+  if (!msg || msg.length < 5) {
+    textarea.style.borderColor = 'var(--deep-rose)';
+    textarea.placeholder = 'Please paste a message first…';
     return;
   }
+
+  textarea.style.borderColor = 'var(--rose)';
+
   const result = document.getElementById('tryit-result');
   result.classList.add('show');
   result.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  document.getElementById('live-score').innerHTML = '0<span>/ 100</span>';
-  document.getElementById('live-bar').style.width = '0%';
-  renderResult('live-score','live-bar','live-tags','live-explanation','live-impact','live-reply', msg, true);
+
+  document.getElementById('live-score').innerHTML = 'Analyzing...';
+  document.getElementById('live-tags').innerHTML = '';
+  document.getElementById('live-explanation').textContent = 'Reading the message...';
+  document.getElementById('live-impact').textContent = '';
+  document.getElementById('live-reply').textContent = '';
+
+  try {
+    const data = await callAnalysisAPI(msg);
+    renderApiResult(
+      'live-score',
+      'live-bar',
+      'live-tags',
+      'live-explanation',
+      'live-impact',
+      'live-reply',
+      data,
+      true
+    );
+  } catch (err) {
+    document.getElementById('live-score').innerHTML = 'Error';
+    document.getElementById('live-explanation').textContent = err.message || 'Something went wrong.';
+    document.getElementById('live-impact').textContent = '';
+    document.getElementById('live-reply').textContent = 'Please try again.';
+    console.error(err);
+  }
 }
 
-function analyzeModal() {
-  const msg = document.getElementById('modalMessage').value.trim();
-  if (!msg || msg.length < 10) {
-    document.getElementById('modalMessage').style.borderColor = 'var(--deep-rose)';
+async function analyzeModal() {
+  const textarea = document.getElementById('modalMessage');
+  const msg = textarea.value.trim();
+
+  if (!msg || msg.length < 5) {
+    textarea.style.borderColor = 'var(--deep-rose)';
     return;
   }
+
+  textarea.style.borderColor = 'var(--rose)';
+
   const result = document.getElementById('modal-result');
   result.style.display = 'block';
-  document.getElementById('modal-score').innerHTML = '0<span>/ 100</span>';
-  document.getElementById('modal-bar').style.width = '0%';
-  renderResult('modal-score','modal-bar','modal-tags','modal-explanation',null,'modal-reply', msg, false);
+
+  document.getElementById('modal-score').innerHTML = 'Analyzing...';
+  document.getElementById('modal-tags').innerHTML = '';
+  document.getElementById('modal-explanation').textContent = 'Reading the message...';
+  document.getElementById('modal-reply').textContent = '';
+
+  try {
+    const data = await callAnalysisAPI(msg);
+    renderApiResult(
+      'modal-score',
+      'modal-bar',
+      'modal-tags',
+      'modal-explanation',
+      null,
+      'modal-reply',
+      data,
+      false
+    );
+  } catch (err) {
+    document.getElementById('modal-score').innerHTML = 'Error';
+    document.getElementById('modal-explanation').textContent = err.message || 'Something went wrong.';
+    document.getElementById('modal-reply').textContent = 'Please try again.';
+    console.error(err);
+  }
 }
 
 /* ── Modal ─────────────────────────────────────── */
@@ -1533,14 +243,17 @@ function openModal() {
   document.getElementById('modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
   document.body.style.overflow = '';
 }
+
 function closeOnOverlay(e) {
   if (e.target === document.getElementById('modal')) closeModal();
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
 </script>
-</body>
-</html>

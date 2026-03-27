@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Toxic Text Detector</title>
+</head>
+<body>
+  <h1>This is why that text made you feel crazy.</h1>
+  <p>Paste the message you keep re-reading.</p>
+
+  <textarea id="message" placeholder="Paste the message you keep re-reading..." rows="8" cols="60"></textarea>
+  <br /><br />
+  <button id="analyzeBtn">Analyze This Message</button>
+
+  <p id="loading" style="display:none;">Analyzing...</p>
+  <p id="error" style="color:red;"></p>
+
+  <div id="result" style="display:none; border:1px solid #ccc; padding:20px; margin-top:20px;">
+    <h2 id="score"></h2>
+    <p><strong>Detected:</strong> <span id="detected"></span></p>
+    <p><strong>What's happening:</strong> <span id="explanation"></span></p>
+    <p><strong>Emotional impact:</strong> <span id="impact"></span></p>
+    <p><strong>Suggested reply:</strong> <span id="reply"></span></p>
+  </div>
+
+  <script>
+    const btn = document.getElementById("analyzeBtn");
+    const textarea = document.getElementById("message");
+    const loading = document.getElementById("loading");
+    const error = document.getElementById("error");
+    const result = document.getElementById("result");
+    const score = document.getElementById("score");
+    const detected = document.getElementById("detected");
+    const explanation = document.getElementById("explanation");
+    const impact = document.getElementById("impact");
+    const reply = document.getElementById("reply");
+
+    btn.addEventListener("click", async () => {
+      error.textContent = "";
+      result.style.display = "none";
+
+      const message = textarea.value.trim();
+
+      if (!message) {
+        error.textContent = "Paste a message first.";
+        return;
+      }
+
+      loading.style.display = "block";
+
+      try {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ message })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Unknown error");
+        }
+
+        score.textContent = "Toxic Score: " + data.toxicity_score + "%";
+        detected.textContent = (data.detected || []).join(", ");
+        explanation.textContent = data.explanation;
+        impact.textContent = data.emotional_impact;
+        reply.textContent = data.suggested_reply;
+
+        result.style.display = "block";
+      } catch (e) {
+        error.textContent = e.message;
+      } finally {
+        loading.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>

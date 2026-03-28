@@ -5,26 +5,32 @@ const anthropic = new Anthropic({
 });
 
 const MIN_SCORE_BY_TAG = {
-  gaslighting: 60,
-  manipulation: 55,
-  dismissal: 45,
-  deflection: 48,
-  "blame shifting": 50,
-  "character attack": 55,
-  guilt: 48,
-  minimization: 46,
-  invalidation: 50,
-  generalization: 44,
+  gaslighting: 68,
+  manipulation: 58,
+  dismissal: 48,
+  deflection: 50,
+  "blame shifting": 54,
+  "character attack": 58,
+  guilt: 50,
+  minimization: 48,
+  invalidation: 56,
+  generalization: 48,
+  "pattern-based invalidation": 60,
 };
 
 const PHRASE_BOOSTS = [
-  { pattern: /\boverreacting\b/i, boost: 15, floor: 55 },
-  { pattern: /\btoo sensitive\b/i, boost: 15, floor: 55 },
-  { pattern: /\byou always\b/i, boost: 12, floor: 45 },
-  { pattern: /\byou never\b/i, boost: 10, floor: 42 },
-  { pattern: /\bi never said that\b/i, boost: 20, floor: 65 },
-  { pattern: /\bit'?s your fault\b/i, boost: 18, floor: 60 },
-  { pattern: /\bi'?m sorry you feel that way\b/i, boost: 14, floor: 50 },
+  { pattern: /\boverreacting\b/i, boost: 18, floor: 64 },
+  { pattern: /\btoo sensitive\b/i, boost: 18, floor: 64 },
+  { pattern: /\byou always\b/i, boost: 14, floor: 52 },
+  { pattern: /\byou never\b/i, boost: 12, floor: 48 },
+  { pattern: /\bi never said that\b/i, boost: 22, floor: 72 },
+  { pattern: /\bit'?s your fault\b/i, boost: 20, floor: 66 },
+  { pattern: /\bi'?m sorry you feel that way\b/i, boost: 16, floor: 54 },
+  { pattern: /\byou made me\b/i, boost: 16, floor: 58 },
+  { pattern: /\bcalm down\b/i, boost: 10, floor: 42 },
+  { pattern: /\bmaybe try therapy\b/i, boost: 16, floor: 56 },
+  { pattern: /\byou'?re crazy\b/i, boost: 25, floor: 78 },
+  { pattern: /\bwhatever\b/i, boost: 8, floor: 28 },
 ];
 
 function clampScore(value) {
@@ -34,7 +40,18 @@ function clampScore(value) {
 }
 
 function normalizeTag(tag) {
-  return String(tag || "").toLowerCase();
+  return String(tag || "").trim().toLowerCase();
+}
+
+function extractJson(text) {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("Model did not return valid JSON");
+  }
+
+  return text.slice(start, end + 1);
 }
 
 function recalibrateScore(message, detected, originalScore) {
@@ -59,21 +76,28 @@ function recalibrateScore(message, detected, originalScore) {
     }
   }
 
+  const exclamations = (message.match(/!/g) || []).length;
+  if (exclamations >= 2) {
+    boost += 4;
+  }
+
   score += boost;
   score = Math.max(score, minScore);
 
   return clampScore(score);
 }
 
-function extractJson(text) {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
+function ensureDetectedTags(tags) {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .map((tag) => String(tag || "").trim())
+    .filter(Boolean)
+    .slice(0, 6);
+}
 
-  if (start === -1 || end === -1 || end <= start) {
-    throw new Error("Model did not return valid JSON");
-  }
-
-  return text.slice(start, end + 1);
+function cleanText(value, fallback) {
+  const text = String(value || "").trim().replace(/\s+/g, " ");
+  return text || fallback;
 }
 
 module.exports = async function handler(req, res) {
@@ -95,31 +119,31 @@ You are analyzing a message for emotional manipulation.
 This is NOT a moderation task.
 This is a psychological clarity task.
 
-Your job is to explain WHY this message feels wrong, confusing, or emotionally heavy.
+Your job is to explain:
+- why this message feels wrong, confusing, or emotionally heavy
+- what it subtly does psychologically
+- why it stays in the person's head instead of being easy to dismiss
 
 Scoring rules:
-- Score based on emotional impact, not just aggression.
-- If the message causes doubt, confusion, guilt, or invalidation, the score should not be low.
+- Score based on emotional impact, invalidation, manipulation, blame, distortion, and self-doubt risk.
+- Do NOT reserve high scores only for explicit abuse or threats.
+- If a message dismisses feelings, reframes the person as the problem, uses absolutes like "always" or "never", creates shame, or makes someone question themselves, the score should often be moderate or high.
 - Do NOT be overly conservative.
-- Messages that make someone question themselves should often land in a moderate or high score range.
 
 Writing style:
 - Make the user feel understood immediately.
 - Be emotionally precise, not generic.
-- Do not sound robotic or academic.
-- Avoid fluff.
+- Sound human, clear, and sharp.
+- Avoid robotic or academic phrasing.
+- Keep it concise, but make it feel valuable.
 
-CRITICAL:
-Explain why this message stays in the person's head.
-Explain what it subtly does psychologically.
-
-Return ONLY valid JSON.
+Return ONLY valid JSON in this exact shape:
 
 {
   "toxicity_score": number,
   "detected": ["Gaslighting"],
   "explanation": "Clear, emotionally sharp explanation in 2-4 sentences.",
-  "emotional_impact": "Make the user feel seen in 2-3 sentences.",
+  "emotional_impact": "Human, validating impact in 2-3 sentences.",
   "suggested_reply": "Short, confident, real-world usable response."
 }
 
@@ -129,7 +153,7 @@ ${message}
 
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5",
-      max_tokens: 400,
+      max_tokens: 450,
       temperature: 0.3,
       messages: [{ role: "user", content: prompt }],
     });
@@ -145,18 +169,29 @@ ${message}
     const jsonText = extractJson(text);
     const data = JSON.parse(jsonText);
 
+    const detected = ensureDetectedTags(data.detected);
+
     const finalScore = recalibrateScore(
       message,
-      Array.isArray(data.detected) ? data.detected : [],
+      detected,
       data.toxicity_score
     );
 
     return res.status(200).json({
       toxicity_score: finalScore,
-      detected: Array.isArray(data.detected) ? data.detected : [],
-      explanation: data.explanation || "",
-      emotional_impact: data.emotional_impact || "",
-      suggested_reply: data.suggested_reply || "",
+      detected: detected.length ? detected : ["Emotional Dismissal"],
+      explanation: cleanText(
+        data.explanation,
+        "This message shifts attention away from what hurt you and makes your reaction seem like the real problem."
+      ),
+      emotional_impact: cleanText(
+        data.emotional_impact,
+        "It can leave you feeling dismissed, confused, and less sure of your own judgment."
+      ),
+      suggested_reply: cleanText(
+        data.suggested_reply,
+        "My reaction is valid. If you have a concern, address it directly instead of dismissing how I feel."
+      ),
     });
   } catch (error) {
     console.error("Error analyzing message:", error);

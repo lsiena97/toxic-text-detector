@@ -1,162 +1,876 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Toxic Text Detector</title>
-
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #fff9f5;
-  color: #333;
-  text-align: center;
-  padding: 40px 20px;
-}
-
-h1 {
-  font-size: 28px;
-  margin-bottom: 10px;
-}
-
-textarea {
-  width: 90%;
-  max-width: 500px;
-  height: 120px;
-  padding: 10px;
-  margin-top: 20px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-}
-
-button {
-  margin-top: 15px;
-  padding: 12px 20px;
-  background: #c47a6b;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #a96558;
-}
-
-.result {
-  margin-top: 30px;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: left;
-}
-
-.score {
-  font-size: 22px;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-.tags span {
-  display: inline-block;
-  background: #fdecea;
-  color: #c0392b;
-  padding: 4px 8px;
-  border-radius: 20px;
-  margin: 3px;
-  font-size: 12px;
-}
-
-.block {
-  margin-top: 10px;
-}
-</style>
-</head>
-
-<body>
-
-<h1>This is why that text made you feel crazy.</h1>
-<p>Paste the message you keep re-reading.</p>
-
-<textarea id="message" placeholder="Type or paste the message..."></textarea>
-
-<br>
-<button onclick="analyze()">Analyze This Message</button>
-
-<div class="result" id="result" style="display:none;">
-  <div class="score" id="score"></div>
-  <div class="tags" id="tags"></div>
-
-  <div class="block">
-    <strong>What's happening:</strong>
-    <p id="explanation"></p>
-  </div>
-
-  <div class="block">
-    <strong>Emotional impact:</strong>
-    <p id="impact"></p>
-  </div>
-
-  <div class="block">
-    <strong>Suggested reply:</strong>
-    <p id="reply"></p>
-  </div>
-</div>
-
-<script>
-async function analyze() {
-  const message = document.getElementById('message').value.trim();
-
-  if (!message) {
-    alert("Paste a message first");
-    return;
-  }
-
-  const resultBox = document.getElementById('result');
-  resultBox.style.display = 'block';
-
-  document.getElementById('score').innerText = "Analyzing...";
-  document.getElementById('tags').innerHTML = "";
-  document.getElementById('explanation').innerText = "";
-  document.getElementById('impact').innerText = "";
-  document.getElementById('reply').innerText = "";
-
-  try {
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Erro");
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Toxic Text Detector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#fff8f4;
+      --bg-2:#f8ece7;
+      --card:#ffffff;
+      --text:#2a2321;
+      --muted:#7d6d68;
+      --rose:#c97c6b;
+      --rose-dark:#b56b5b;
+      --rose-soft:#f4ddd6;
+      --line:#ecd5ce;
+      --danger:#d4574a;
+      --amber:#d99c54;
+      --green:#62a37e;
+      --shadow:0 10px 35px rgba(68,41,34,.08);
+      --shadow-lg:0 18px 48px rgba(68,41,34,.12);
+      --radius:22px;
     }
 
-    document.getElementById('score').innerText =
-      "Toxic Score: " + Math.round(data.toxicity_score * 100) + "%";
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:"DM Sans",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, #f7e4dd 0%, transparent 28%),
+        radial-gradient(circle at bottom right, #f5ddd5 0%, transparent 24%),
+        var(--bg);
+      line-height:1.6;
+    }
 
-    const tagsContainer = document.getElementById('tags');
-    tagsContainer.innerHTML = "";
+    .container{
+      width:min(1120px, calc(100% - 32px));
+      margin:0 auto;
+    }
 
-    (data.detected || []).forEach(tag => {
-      const span = document.createElement('span');
-      span.innerText = tag;
-      tagsContainer.appendChild(span);
-    });
+    .nav{
+      position:sticky;
+      top:0;
+      z-index:20;
+      backdrop-filter: blur(12px);
+      background:rgba(255,248,244,.82);
+      border-bottom:1px solid rgba(201,124,107,.14);
+    }
 
-    document.getElementById('explanation').innerText = data.explanation;
-    document.getElementById('impact').innerText = data.emotional_impact;
-    document.getElementById('reply').innerText = data.suggested_reply;
+    .nav-inner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 0;
+    }
 
-  } catch (err) {
-    document.getElementById('score').innerText = "Error analyzing message";
-    console.error(err);
-  }
-}
-</script>
+    .brand{
+      font-family:"DM Serif Display",serif;
+      font-size:30px;
+      letter-spacing:-.03em;
+    }
 
+    .brand span{color:var(--rose)}
+
+    .nav-btn,.primary-btn,.secondary-btn{
+      border:none;
+      border-radius:999px;
+      cursor:pointer;
+      transition:.2s ease;
+      font-family:inherit;
+      font-weight:800;
+    }
+
+    .nav-btn,.primary-btn{
+      background:var(--rose);
+      color:#fff;
+      box-shadow:0 8px 22px rgba(201,124,107,.24);
+    }
+
+    .nav-btn:hover,.primary-btn:hover{
+      background:var(--rose-dark);
+      transform:translateY(-1px);
+    }
+
+    .nav-btn{
+      padding:12px 18px;
+      font-size:14px;
+    }
+
+    .hero{
+      padding:76px 0 54px;
+      text-align:center;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 16px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.65);
+      color:var(--rose);
+      border-radius:999px;
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      margin-bottom:22px;
+    }
+
+    .prehead{
+      color:var(--muted);
+      font-style:italic;
+      font-size:18px;
+      margin-bottom:10px;
+    }
+
+    h1{
+      font-family:"DM Serif Display",serif;
+      font-size:clamp(42px,7vw,78px);
+      line-height:1.03;
+      letter-spacing:-.05em;
+      margin:0 auto 18px;
+      max-width:860px;
+    }
+
+    h1 em{
+      font-style:italic;
+      color:var(--rose);
+    }
+
+    .hero-sub{
+      max-width:720px;
+      margin:0 auto 28px;
+      color:var(--muted);
+      font-size:clamp(18px,2.2vw,22px);
+    }
+
+    .hero-actions{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:12px;
+    }
+
+    .primary-btn{
+      padding:18px 28px;
+      font-size:18px;
+      min-width:280px;
+    }
+
+    .hero-note{
+      color:var(--rose-dark);
+      font-size:14px;
+      font-weight:700;
+    }
+
+    .hero-trust{
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .section{
+      padding:34px 0;
+    }
+
+    .section-title{
+      text-align:center;
+      font-family:"DM Serif Display",serif;
+      font-size:clamp(32px,4vw,52px);
+      line-height:1.08;
+      letter-spacing:-.04em;
+      margin:0 0 10px;
+    }
+
+    .section-sub{
+      text-align:center;
+      color:var(--muted);
+      max-width:720px;
+      margin:0 auto 26px;
+      font-size:18px;
+    }
+
+    .pain-grid,
+    .benefit-grid,
+    .proof-grid{
+      display:grid;
+      gap:16px;
+    }
+
+    .pain-grid{
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    }
+
+    .pain-card,
+    .benefit-card,
+    .proof-card{
+      background:rgba(255,255,255,.78);
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:18px;
+      box-shadow:var(--shadow);
+    }
+
+    .pain-card{
+      font-size:16px;
+    }
+
+    .pain-card strong{
+      color:var(--text);
+      display:block;
+      margin-bottom:6px;
+    }
+
+    .analyzer-shell{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:22px;
+      align-items:start;
+      margin-top:10px;
+    }
+
+    .analyzer-panel,
+    .result-panel{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow-lg);
+    }
+
+    .analyzer-panel{
+      padding:22px;
+    }
+
+    .panel-label{
+      font-size:13px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:var(--rose);
+      font-weight:800;
+      margin-bottom:10px;
+    }
+
+    .panel-title{
+      font-family:"DM Serif Display",serif;
+      font-size:34px;
+      line-height:1.08;
+      letter-spacing:-.03em;
+      margin:0 0 10px;
+    }
+
+    .panel-sub{
+      color:var(--muted);
+      margin:0 0 18px;
+      font-size:16px;
+    }
+
+    textarea{
+      width:100%;
+      min-height:220px;
+      resize:vertical;
+      border:1.5px solid var(--line);
+      border-radius:18px;
+      background:#fff;
+      padding:18px;
+      font:inherit;
+      font-size:16px;
+      color:var(--text);
+      outline:none;
+      transition:border-color .2s, box-shadow .2s;
+    }
+
+    textarea:focus{
+      border-color:var(--rose);
+      box-shadow:0 0 0 4px rgba(201,124,107,.12);
+    }
+
+    .helper{
+      margin-top:10px;
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .cta-row{
+      margin-top:16px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      align-items:stretch;
+    }
+
+    .secondary-btn{
+      padding:16px 20px;
+      font-size:17px;
+      background:#221c1a;
+      color:#fff;
+    }
+
+    .secondary-btn:hover{
+      transform:translateY(-1px);
+      background:#161210;
+    }
+
+    .warning{
+      text-align:center;
+      color:var(--rose-dark);
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .result-panel{
+      padding:22px;
+      position:sticky;
+      top:86px;
+    }
+
+    .result-empty{
+      color:var(--muted);
+      font-size:15px;
+      background:linear-gradient(180deg, #fff 0%, #fcf2ee 100%);
+      border:1px dashed var(--line);
+      border-radius:18px;
+      padding:18px;
+    }
+
+    .loading{
+      color:var(--rose-dark);
+      font-weight:800;
+    }
+
+    .score-row{
+      display:flex;
+      align-items:end;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:10px;
+    }
+
+    .score-label{
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--muted);
+      font-weight:800;
+    }
+
+    .score-number{
+      font-family:"DM Serif Display",serif;
+      font-size:54px;
+      line-height:1;
+      color:var(--danger);
+      letter-spacing:-.05em;
+    }
+
+    .score-number span{
+      font-family:"DM Sans",sans-serif;
+      font-size:20px;
+      color:var(--muted);
+      font-weight:600;
+    }
+
+    .bar-track{
+      height:12px;
+      border-radius:999px;
+      background:#f1e5e0;
+      overflow:hidden;
+      margin-bottom:16px;
+    }
+
+    .bar-fill{
+      width:0%;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg, var(--amber), var(--danger));
+      transition:width .6s ease;
+    }
+
+    .tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:16px;
+    }
+
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 12px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:800;
+      border:1px solid transparent;
+    }
+
+    .tag-danger{background:#fdecea;color:#b93b31;border-color:#f4c6c0}
+    .tag-warning{background:#fff2df;color:#9b611f;border-color:#f0d1a4}
+    .tag-purple{background:#f1ecff;color:#5a49ad;border-color:#d7ccff}
+
+    .result-block{
+      background:#fffaf7;
+      border:1px solid var(--line);
+      border-left:4px solid var(--rose);
+      border-radius:16px;
+      padding:15px 16px;
+      margin-bottom:12px;
+    }
+
+    .result-block.green{
+      background:#f3faf6;
+      border-left-color:var(--green);
+    }
+
+    .result-block-title{
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      font-weight:800;
+      color:var(--rose);
+      margin-bottom:6px;
+    }
+
+    .result-block.green .result-block-title{
+      color:#4f8f6d;
+    }
+
+    .result-text{
+      margin:0;
+      font-size:15px;
+      color:var(--text);
+    }
+
+    .benefit-grid{
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    }
+
+    .benefit-card h3{
+      margin:8px 0 8px;
+      font-family:"DM Serif Display",serif;
+      font-size:24px;
+      line-height:1.1;
+      letter-spacing:-.03em;
+    }
+
+    .benefit-card p{
+      margin:0;
+      color:var(--muted);
+    }
+
+    .proof-grid{
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    }
+
+    .proof-card .stars{
+      color:#f2a542;
+      margin-bottom:10px;
+      font-size:14px;
+      letter-spacing:.08em;
+    }
+
+    .proof-card p{
+      margin:0 0 14px;
+      color:var(--text);
+    }
+
+    .proof-card strong{
+      display:block;
+      font-size:15px;
+    }
+
+    .proof-card span{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .pricing{
+      text-align:center;
+      padding-bottom:66px;
+    }
+
+    .pricing-box{
+      max-width:720px;
+      margin:0 auto;
+      background:linear-gradient(180deg,#fff 0%, #fcf1ed 100%);
+      border:1px solid var(--line);
+      border-radius:28px;
+      padding:26px;
+      box-shadow:var(--shadow-lg);
+    }
+
+    .pricing-box h3{
+      margin:0 0 8px;
+      font-family:"DM Serif Display",serif;
+      font-size:38px;
+      letter-spacing:-.04em;
+    }
+
+    .pricing-box p{
+      margin:0 0 18px;
+      color:var(--muted);
+      font-size:17px;
+    }
+
+    .price{
+      font-family:"DM Serif Display",serif;
+      font-size:62px;
+      line-height:1;
+      color:var(--rose);
+      letter-spacing:-.05em;
+      margin-bottom:8px;
+    }
+
+    .price-note{
+      color:var(--muted);
+      margin-bottom:18px;
+      font-size:14px;
+    }
+
+    .pricing-points{
+      display:grid;
+      gap:10px;
+      text-align:left;
+      max-width:420px;
+      margin:0 auto 22px;
+    }
+
+    .pricing-points div{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 14px;
+      font-size:15px;
+    }
+
+    .footer{
+      text-align:center;
+      padding:30px 20px 40px;
+      color:var(--muted);
+      font-size:13px;
+      border-top:1px solid rgba(201,124,107,.12);
+    }
+
+    @media (max-width: 900px){
+      .analyzer-shell{
+        grid-template-columns:1fr;
+      }
+      .result-panel{
+        position:static;
+      }
+    }
+
+    @media (max-width: 640px){
+      .nav-inner{
+        gap:12px;
+      }
+      .brand{
+        font-size:24px;
+      }
+      .nav-btn{
+        padding:10px 14px;
+      }
+      .hero{
+        padding-top:52px;
+      }
+      .primary-btn{
+        width:100%;
+        max-width:320px;
+      }
+      .panel-title{
+        font-size:28px;
+      }
+      .score-number{
+        font-size:44px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div class="container nav-inner">
+      <div class="brand">Toxic<span>Text</span> Detector</div>
+      <button class="nav-btn" onclick="document.getElementById('analyzer').scrollIntoView({behavior:'smooth'})">Try It Free</button>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="container">
+      <div class="eyebrow">✦ 14,000+ women stopped second-guessing themselves</div>
+      <div class="prehead">Read this before you reply to him.</div>
+      <h1>This is why that text <em>made you feel crazy.</em></h1>
+      <p class="hero-sub">
+        Paste the message. In seconds, AI tells you what’s really happening,
+        why it feels wrong, and what you can say back without losing yourself.
+      </p>
+      <div class="hero-actions">
+        <button class="primary-btn" onclick="document.getElementById('analyzer').scrollIntoView({behavior:'smooth'})">
+          Check This Text — It’s Free
+        </button>
+        <div class="hero-note">Most people miss the exact pattern that’s affecting them. Don’t.</div>
+        <div class="hero-trust">Private & anonymous — your messages are never stored</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">That nagging feeling you can’t shake</h2>
+      <p class="section-sub">
+        If any of these sound familiar, you’re exactly who this was built for.
+      </p>
+
+      <div class="pain-grid">
+        <div class="pain-card"><strong>“Why do I feel guilty after reading this?”</strong>You didn’t do anything wrong, yet somehow you still feel like the problem.</div>
+        <div class="pain-card"><strong>“Am I overreacting… or is he manipulating me?”</strong>That confusion is often the tactic, not the accident.</div>
+        <div class="pain-card"><strong>“He apologized, but it didn’t feel like an apology.”</strong>The words looked fine. The feeling underneath did not.</div>
+        <div class="pain-card"><strong>“I screenshot his messages to send to my friends.”</strong>Because part of you already knows something is off.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="analyzer">
+    <div class="container analyzer-shell">
+      <div class="analyzer-panel">
+        <div class="panel-label">Try it yourself</div>
+        <h2 class="panel-title">Paste the message that’s been stuck in your head.</h2>
+        <p class="panel-sub">
+          We’ll name exactly what’s happening — in plain language, in seconds.
+          No judgment. Just clarity.
+        </p>
+
+        <textarea id="message" placeholder="Paste the message you keep re-reading… even the ones that sound normal on the surface."></textarea>
+
+        <div class="helper">You’ve already read it twice. Just check.</div>
+
+        <div class="cta-row">
+          <button class="secondary-btn" onclick="analyze()">Analyze This Message</button>
+          <div class="warning">⚠️ Ignoring this now usually makes it worse.</div>
+        </div>
+      </div>
+
+      <div class="result-panel">
+        <div class="panel-label">Your analysis</div>
+
+        <div id="resultEmpty" class="result-empty">
+          Paste a message and click analyze. Your toxicity score, detected patterns,
+          explanation, emotional impact, and suggested reply will appear here.
+        </div>
+
+        <div id="resultContent" style="display:none;">
+          <div class="score-row">
+            <div class="score-label">Toxicity score</div>
+            <div class="score-number" id="scoreNumber">0<span>/ 100</span></div>
+          </div>
+
+          <div class="bar-track">
+            <div class="bar-fill" id="scoreBar"></div>
+          </div>
+
+          <div class="tags" id="tags"></div>
+
+          <div class="result-block">
+            <div class="result-block-title">What’s really happening</div>
+            <p class="result-text" id="explanation"></p>
+          </div>
+
+          <div class="result-block">
+            <div class="result-block-title">Emotional impact on you</div>
+            <p class="result-text" id="impact"></p>
+          </div>
+
+          <div class="result-block green">
+            <div class="result-block-title">Suggested reply</div>
+            <p class="result-text" id="reply"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">From confusion to clarity</h2>
+      <p class="section-sub">
+        This isn’t about deciding whether to stay or leave. It’s about seeing clearly.
+      </p>
+
+      <div class="benefit-grid">
+        <div class="benefit-card">
+          <div>🛑</div>
+          <h3>Stop second-guessing yourself</h3>
+          <p>Get an objective read so you can trust your instincts again.</p>
+        </div>
+        <div class="benefit-card">
+          <div>🔍</div>
+          <h3>See manipulation faster</h3>
+          <p>Named patterns are easier to handle than vague emotional confusion.</p>
+        </div>
+        <div class="benefit-card">
+          <div>💬</div>
+          <h3>Reply with confidence</h3>
+          <p>Get calm, clear language that protects your boundaries.</p>
+        </div>
+        <div class="benefit-card">
+          <div>🛡️</div>
+          <h3>Protect your energy</h3>
+          <p>Know when to engage, when to disengage, and when to walk away.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">“I thought I was the problem.”</h2>
+      <p class="section-sub">You’re not. And this is exactly why women keep coming back to use it.</p>
+
+      <div class="proof-grid">
+        <div class="proof-card">
+          <div class="stars">★★★★★</div>
+          <p>I’d been rereading the same text for days. This gave me the exact language for what was happening.</p>
+          <strong>Mariana T.</strong>
+          <span>São Paulo, Brazil</span>
+        </div>
+        <div class="proof-card">
+          <div class="stars">★★★★★</div>
+          <p>It showed me that his messages were the problem — not my sensitivity. That changed everything.</p>
+          <strong>Ashley R.</strong>
+          <span>Atlanta, USA</span>
+        </div>
+        <div class="proof-card">
+          <div class="stars">★★★★★</div>
+          <p>The suggested reply was calm, firm, and exactly what I needed. No drama. Just clarity.</p>
+          <strong>Sophie M.</strong>
+          <span>London, UK</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section pricing">
+    <div class="container">
+      <div class="pricing-box">
+        <h3>You already know something is off.</h3>
+        <p>Now see exactly why — and stop carrying that confusion alone.</p>
+        <div class="price">$9.99</div>
+        <div class="price-note">One-time upgrade for unlimited future analyses</div>
+
+        <div class="pricing-points">
+          <div>✓ Analyze every message — not just this one</div>
+          <div>✓ Spot patterns faster over time</div>
+          <div>✓ Get a suggested reply every time</div>
+          <div>✓ Stop second-guessing yourself for good</div>
+        </div>
+
+        <button class="primary-btn" onclick="document.getElementById('analyzer').scrollIntoView({behavior:'smooth'})">
+          Start Free First
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    © 2026 Toxic Text Detector. For informational purposes only — not a substitute for professional mental health advice.
+  </div>
+
+  <script>
+    function getTagClass(label){
+      const lower = String(label).toLowerCase();
+
+      if (
+        lower.includes('gaslighting') ||
+        lower.includes('manipulation') ||
+        lower.includes('narciss')
+      ) return 'tag tag-danger';
+
+      if (
+        lower.includes('dismiss') ||
+        lower.includes('deflection') ||
+        lower.includes('passive') ||
+        lower.includes('blame') ||
+        lower.includes('guilt') ||
+        lower.includes('generalization')
+      ) return 'tag tag-warning';
+
+      return 'tag tag-purple';
+    }
+
+    function getTagEmoji(label){
+      const lower = String(label).toLowerCase();
+      if (lower.includes('gaslighting')) return '🚨';
+      if (lower.includes('manipulation')) return '⚠️';
+      if (lower.includes('dismiss')) return '🔁';
+      if (lower.includes('deflection')) return '🔁';
+      if (lower.includes('passive')) return '🪞';
+      if (lower.includes('blame')) return '🪞';
+      if (lower.includes('guilt')) return '🪞';
+      return '✦';
+    }
+
+    function renderTags(tags){
+      const container = document.getElementById('tags');
+      container.innerHTML = '';
+
+      (tags || []).forEach(tagText => {
+        const span = document.createElement('span');
+        span.className = getTagClass(tagText);
+        span.textContent = `${getTagEmoji(tagText)} ${tagText}`;
+        container.appendChild(span);
+      });
+    }
+
+    function setScore(score){
+      const safeScore = Math.max(0, Math.min(Number(score) || 0, 100));
+      document.getElementById('scoreNumber').innerHTML = `${Math.round(safeScore)}<span>/ 100</span>`;
+      document.getElementById('scoreBar').style.width = `${safeScore}%`;
+    }
+
+    async function analyze(){
+      const textarea = document.getElementById('message');
+      const message = textarea.value.trim();
+
+      if (!message) {
+        textarea.focus();
+        textarea.style.borderColor = '#d4574a';
+        return;
+      }
+
+      textarea.style.borderColor = '#ecd5ce';
+
+      document.getElementById('resultEmpty').style.display = 'none';
+      document.getElementById('resultContent').style.display = 'block';
+
+      document.getElementById('scoreNumber').innerHTML = `<span class="loading">Analyzing...</span>`;
+      document.getElementById('scoreBar').style.width = '12%';
+      document.getElementById('tags').innerHTML = '';
+      document.getElementById('explanation').textContent = 'Reading the message...';
+      document.getElementById('impact').textContent = 'Assessing emotional impact...';
+      document.getElementById('reply').textContent = 'Writing a calm suggested reply...';
+
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Error analyzing message');
+        }
+
+        setScore(data.toxicity_score);
+        renderTags(data.detected);
+        document.getElementById('explanation').textContent = data.explanation || '';
+        document.getElementById('impact').textContent = data.emotional_impact || '';
+        document.getElementById('reply').textContent = data.suggested_reply || '';
+      } catch (err) {
+        document.getElementById('scoreNumber').innerHTML = `Error<span></span>`;
+        document.getElementById('scoreBar').style.width = '0%';
+        document.getElementById('tags').innerHTML = '';
+        document.getElementById('explanation').textContent = err.message || 'Something went wrong.';
+        document.getElementById('impact').textContent = '';
+        document.getElementById('reply').textContent = 'Please try again.';
+        console.error(err);
+      }
+    }
+  </script>
 </body>
 </html>

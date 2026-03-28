@@ -72,31 +72,33 @@ function recalibrateScore(message, detected, originalScore) {
   let minScore = 0;
   let boost = 0;
 
-  const lowerMessage = String(message || "").toLowerCase();
+  const lower = String(message || "").toLowerCase();
 
-  if (
-    lowerMessage.includes("overreacting") &&
-    lowerMessage.includes("always")
-  ) {
-    minScore = Math.max(minScore, 68);
+  // PADRÕES CRÍTICOS: força score alto sem depender da IA
+  if (lower.includes("overreacting") && lower.includes("always")) {
+    return 72;
   }
 
   if (
-    lowerMessage.includes("too sensitive") ||
-    lowerMessage.includes("you always") ||
-    lowerMessage.includes("you never")
+    lower.includes("too sensitive") &&
+    (lower.includes("always") || lower.includes("never"))
   ) {
-    minScore = Math.max(minScore, 60);
+    return 70;
+  }
+
+  if (lower.includes("you always")) {
+    minScore = Math.max(minScore, 64);
   }
 
   if (
-    lowerMessage.includes("you’re crazy") ||
-    lowerMessage.includes("you're crazy") ||
-    lowerMessage.includes("you are crazy")
+    lower.includes("you’re crazy") ||
+    lower.includes("you're crazy") ||
+    lower.includes("you are crazy")
   ) {
-    minScore = Math.max(minScore, 75);
+    return 78;
   }
 
+  // TAGS viram apoio, não fator principal
   for (const tag of detected || []) {
     const normalized = normalizeTag(tag);
 
@@ -106,11 +108,18 @@ function recalibrateScore(message, detected, originalScore) {
       }
     }
 
-    if (normalized.includes("gaslighting")) minScore = Math.max(minScore, 70);
-    if (normalized.includes("invalidation")) minScore = Math.max(minScore, 60);
-    if (normalized.includes("dismissal")) minScore = Math.max(minScore, 55);
+    if (normalized.includes("gaslighting")) {
+      minScore = Math.max(minScore, 70);
+    }
+    if (normalized.includes("invalidation")) {
+      minScore = Math.max(minScore, 60);
+    }
+    if (normalized.includes("dismissal")) {
+      minScore = Math.max(minScore, 58);
+    }
   }
 
+  // boosts complementares
   for (const rule of PHRASE_BOOSTS) {
     if (rule.pattern.test(message)) {
       boost += rule.boost;

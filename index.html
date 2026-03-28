@@ -24,6 +24,7 @@
       --shadow:0 10px 35px rgba(68,41,34,.08);
       --shadow-lg:0 18px 48px rgba(68,41,34,.12);
       --radius:22px;
+      --ink:#221c1a;
     }
 
     *{box-sizing:border-box}
@@ -37,6 +38,10 @@
         radial-gradient(circle at bottom right, #f5ddd5 0%, transparent 24%),
         var(--bg);
       line-height:1.6;
+    }
+
+    body.paywall-open{
+      overflow:hidden;
     }
 
     .container{
@@ -68,7 +73,7 @@
 
     .brand span{color:var(--rose)}
 
-    .nav-btn,.primary-btn,.secondary-btn{
+    .nav-btn,.primary-btn,.secondary-btn,.paywall-btn,.paywall-secondary{
       border:none;
       border-radius:999px;
       cursor:pointer;
@@ -77,13 +82,13 @@
       font-weight:800;
     }
 
-    .nav-btn,.primary-btn{
+    .nav-btn,.primary-btn,.paywall-btn{
       background:var(--rose);
       color:#fff;
       box-shadow:0 8px 22px rgba(201,124,107,.24);
     }
 
-    .nav-btn:hover,.primary-btn:hover{
+    .nav-btn:hover,.primary-btn:hover,.paywall-btn:hover{
       background:var(--rose-dark);
       transform:translateY(-1px);
     }
@@ -546,6 +551,210 @@
       border-top:1px solid rgba(201,124,107,.12);
     }
 
+    /* PAYWALL */
+    .paywall-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(34, 28, 26, .48);
+      backdrop-filter:blur(8px);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      z-index:999;
+    }
+
+    .paywall-overlay.show{
+      display:flex;
+    }
+
+    .paywall-card{
+      width:min(620px, 100%);
+      background:linear-gradient(180deg, #fff 0%, #fff8f4 100%);
+      border:1px solid var(--line);
+      border-radius:30px;
+      box-shadow:0 24px 64px rgba(34,28,26,.22);
+      padding:28px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .paywall-card::before{
+      content:"";
+      position:absolute;
+      inset:auto -100px -140px auto;
+      width:260px;
+      height:260px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(201,124,107,.16), transparent 70%);
+      pointer-events:none;
+    }
+
+    .paywall-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:8px;
+    }
+
+    .paywall-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--rose);
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      border-radius:999px;
+      padding:9px 14px;
+    }
+
+    .paywall-close{
+      width:40px;
+      height:40px;
+      border-radius:50%;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--text);
+      font-size:22px;
+      line-height:1;
+      cursor:pointer;
+    }
+
+    .paywall-close:hover{
+      background:#fff5f1;
+    }
+
+    .paywall-title{
+      font-family:"DM Serif Display",serif;
+      font-size:clamp(34px, 5vw, 52px);
+      line-height:1.02;
+      letter-spacing:-.05em;
+      margin:10px 0 12px;
+    }
+
+    .paywall-sub{
+      color:var(--muted);
+      font-size:18px;
+      margin:0 0 18px;
+    }
+
+    .paywall-emphasis{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:16px 18px;
+      box-shadow:var(--shadow);
+      margin-bottom:16px;
+    }
+
+    .paywall-emphasis strong{
+      display:block;
+      color:var(--text);
+      font-size:18px;
+      margin-bottom:6px;
+    }
+
+    .paywall-emphasis p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+    }
+
+    .paywall-break{
+      margin:0 0 18px;
+      color:var(--text);
+      font-size:17px;
+      font-weight:700;
+    }
+
+    .paywall-list{
+      display:grid;
+      gap:10px;
+      margin:18px 0 22px;
+    }
+
+    .paywall-list div{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:13px 14px;
+      font-size:15px;
+      color:var(--text);
+      box-shadow:var(--shadow);
+    }
+
+    .paywall-offer{
+      background:linear-gradient(180deg, #fff5f1 0%, #fff 100%);
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:20px 18px;
+      margin-bottom:18px;
+      text-align:center;
+    }
+
+    .paywall-offer-title{
+      font-size:14px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      font-weight:800;
+      color:var(--rose);
+      margin-bottom:6px;
+    }
+
+    .paywall-price{
+      font-family:"DM Serif Display",serif;
+      font-size:56px;
+      line-height:1;
+      letter-spacing:-.05em;
+      color:var(--rose);
+      margin-bottom:6px;
+    }
+
+    .paywall-price-note{
+      color:var(--muted);
+      font-size:14px;
+      margin-bottom:14px;
+    }
+
+    .paywall-btn{
+      width:100%;
+      padding:18px 22px;
+      font-size:18px;
+      margin-bottom:10px;
+    }
+
+    .paywall-btn-note{
+      font-size:13px;
+      color:var(--rose-dark);
+      font-weight:700;
+      text-align:center;
+    }
+
+    .paywall-proof{
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      margin-top:14px;
+    }
+
+    .paywall-secondary{
+      background:transparent;
+      color:var(--muted);
+      font-size:14px;
+      padding:8px 12px;
+      display:block;
+      margin:10px auto 0;
+    }
+
+    .paywall-secondary:hover{
+      color:var(--text);
+    }
+
     @media (max-width: 900px){
       .analyzer-shell{
         grid-template-columns:1fr;
@@ -577,6 +786,13 @@
       }
       .score-number{
         font-size:44px;
+      }
+      .paywall-card{
+        padding:20px;
+        border-radius:24px;
+      }
+      .paywall-price{
+        font-size:46px;
       }
     }
   </style>
@@ -743,13 +959,13 @@
     </div>
   </section>
 
-  <section class="section pricing">
+  <section class="section pricing" id="pricing">
     <div class="container">
       <div class="pricing-box">
         <h3>You already know something is off.</h3>
         <p>Now see exactly why — and stop carrying that confusion alone.</p>
         <div class="price">$9.99</div>
-        <div class="price-note">One-time upgrade for unlimited future analyses</div>
+        <div class="price-note">Monthly unlock for deeper, unlimited future analyses</div>
 
         <div class="pricing-points">
           <div>✓ Analyze every message — not just this one</div>
@@ -769,7 +985,53 @@
     © 2026 Toxic Text Detector. For informational purposes only — not a substitute for professional mental health advice.
   </div>
 
+  <div class="paywall-overlay" id="paywallOverlay" aria-hidden="true">
+    <div class="paywall-card">
+      <div class="paywall-top">
+        <div class="paywall-badge">🔒 Premium clarity</div>
+        <button class="paywall-close" onclick="closePaywall()" aria-label="Close paywall">×</button>
+      </div>
+
+      <h2 class="paywall-title">This isn’t just one message. It’s a pattern.</h2>
+      <p class="paywall-sub">Most people only realize what’s happening when it’s already too late.</p>
+
+      <div class="paywall-emphasis">
+        <strong>You’re not overthinking.</strong>
+        <p>You’re noticing something your brain is trying to protect you from.</p>
+      </div>
+
+      <p class="paywall-break">
+        One message feels confusing.<br>
+        Multiple messages reveal the truth.
+      </p>
+
+      <div class="paywall-list">
+        <div>✔ See patterns across conversations</div>
+        <div>✔ Understand what’s really happening over time</div>
+        <div>✔ Stop second-guessing yourself faster</div>
+        <div>✔ Get confident replies every time</div>
+        <div>✔ Know when something is not okay</div>
+      </div>
+
+      <div class="paywall-offer">
+        <div class="paywall-offer-title">Unlock full clarity</div>
+        <div class="paywall-price">$9.99</div>
+        <div class="paywall-price-note">Per month — less than a coffee to stop doubting yourself</div>
+        <button class="paywall-btn" onclick="goToPricing()">Unlock full analysis</button>
+        <div class="paywall-btn-note">Most users unlock this after their second message.</div>
+      </div>
+
+      <div class="paywall-proof">
+        If you’re here, something didn’t feel right. That feeling is usually right.
+      </div>
+
+      <button class="paywall-secondary" onclick="closePaywall()">Maybe later</button>
+    </div>
+  </div>
+
   <script>
+    const FREE_ANALYSIS_KEY = 'ttd_free_analysis_used_v1';
+
     function getTagClass(label){
       const lower = String(label).toLowerCase();
 
@@ -821,6 +1083,29 @@
       document.getElementById('scoreBar').style.width = `${safeScore}%`;
     }
 
+    function hasUsedFreeAnalysis(){
+      return localStorage.getItem(FREE_ANALYSIS_KEY) === '1';
+    }
+
+    function markFreeAnalysisUsed(){
+      localStorage.setItem(FREE_ANALYSIS_KEY, '1');
+    }
+
+    function showPaywall(){
+      document.getElementById('paywallOverlay').classList.add('show');
+      document.body.classList.add('paywall-open');
+    }
+
+    function closePaywall(){
+      document.getElementById('paywallOverlay').classList.remove('show');
+      document.body.classList.remove('paywall-open');
+    }
+
+    function goToPricing(){
+      closePaywall();
+      document.getElementById('pricing').scrollIntoView({ behavior: 'smooth' });
+    }
+
     async function analyze(){
       const textarea = document.getElementById('message');
       const message = textarea.value.trim();
@@ -828,6 +1113,11 @@
       if (!message) {
         textarea.focus();
         textarea.style.borderColor = '#d4574a';
+        return;
+      }
+
+      if (hasUsedFreeAnalysis()) {
+        showPaywall();
         return;
       }
 
@@ -861,6 +1151,8 @@
         document.getElementById('explanation').textContent = data.explanation || '';
         document.getElementById('impact').textContent = data.emotional_impact || '';
         document.getElementById('reply').textContent = data.suggested_reply || '';
+
+        markFreeAnalysisUsed();
       } catch (err) {
         document.getElementById('scoreNumber').innerHTML = `Error<span></span>`;
         document.getElementById('scoreBar').style.width = '0%';
@@ -871,6 +1163,18 @@
         console.error(err);
       }
     }
+
+    document.getElementById('paywallOverlay').addEventListener('click', function(e){
+      if (e.target.id === 'paywallOverlay') {
+        closePaywall();
+      }
+    });
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') {
+        closePaywall();
+      }
+    });
   </script>
 </body>
 </html>

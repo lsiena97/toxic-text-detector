@@ -54,10 +54,48 @@ function extractJson(text) {
   return text.slice(start, end + 1);
 }
 
+function ensureDetectedTags(tags) {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .map((tag) => String(tag || "").trim())
+    .filter(Boolean)
+    .slice(0, 6);
+}
+
+function cleanText(value, fallback) {
+  const text = String(value || "").trim().replace(/\s+/g, " ");
+  return text || fallback;
+}
+
 function recalibrateScore(message, detected, originalScore) {
   let score = clampScore(originalScore);
   let minScore = 0;
   let boost = 0;
+
+  const lowerMessage = String(message || "").toLowerCase();
+
+  if (
+    lowerMessage.includes("overreacting") &&
+    lowerMessage.includes("always")
+  ) {
+    minScore = Math.max(minScore, 68);
+  }
+
+  if (
+    lowerMessage.includes("too sensitive") ||
+    lowerMessage.includes("you always") ||
+    lowerMessage.includes("you never")
+  ) {
+    minScore = Math.max(minScore, 60);
+  }
+
+  if (
+    lowerMessage.includes("you’re crazy") ||
+    lowerMessage.includes("you're crazy") ||
+    lowerMessage.includes("you are crazy")
+  ) {
+    minScore = Math.max(minScore, 75);
+  }
 
   for (const tag of detected || []) {
     const normalized = normalizeTag(tag);
@@ -67,6 +105,10 @@ function recalibrateScore(message, detected, originalScore) {
         minScore = Math.max(minScore, floor);
       }
     }
+
+    if (normalized.includes("gaslighting")) minScore = Math.max(minScore, 70);
+    if (normalized.includes("invalidation")) minScore = Math.max(minScore, 60);
+    if (normalized.includes("dismissal")) minScore = Math.max(minScore, 55);
   }
 
   for (const rule of PHRASE_BOOSTS) {
@@ -85,19 +127,6 @@ function recalibrateScore(message, detected, originalScore) {
   score = Math.max(score, minScore);
 
   return clampScore(score);
-}
-
-function ensureDetectedTags(tags) {
-  if (!Array.isArray(tags)) return [];
-  return tags
-    .map((tag) => String(tag || "").trim())
-    .filter(Boolean)
-    .slice(0, 6);
-}
-
-function cleanText(value, fallback) {
-  const text = String(value || "").trim().replace(/\s+/g, " ");
-  return text || fallback;
 }
 
 module.exports = async function handler(req, res) {

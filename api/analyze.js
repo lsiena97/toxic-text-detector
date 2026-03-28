@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+const Anthropic = require("@anthropic-ai/sdk").default;
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -42,7 +42,7 @@ function recalibrateScore(message, detected, originalScore) {
   let minScore = 0;
   let boost = 0;
 
-  for (const tag of detected) {
+  for (const tag of detected || []) {
     const normalized = normalizeTag(tag);
 
     for (const [key, floor] of Object.entries(MIN_SCORE_BY_TAG)) {
@@ -68,16 +68,22 @@ function recalibrateScore(message, detected, originalScore) {
 function extractJson(text) {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("Model did not return valid JSON");
+  }
+
   return text.slice(start, end + 1);
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { message } = req.body;
+    const body = req.body || {};
+    const message = String(body.message || "").trim();
 
     if (!message) {
       return res.status(400).json({ error: "Paste a message." });
@@ -93,9 +99,9 @@ Your job is to explain WHY this message feels wrong, confusing, or emotionally h
 
 Scoring rules:
 - Score based on emotional impact, not just aggression.
-- If the message causes doubt, confusion, guilt, or invalidation → score should NOT be low.
-- Do NOT be conservative.
-- Messages that make someone question themselves should be mid/high score.
+- If the message causes doubt, confusion, guilt, or invalidation, the score should not be low.
+- Do NOT be overly conservative.
+- Messages that make someone question themselves should often land in a moderate or high score range.
 
 Writing style:
 - Make the user feel understood immediately.
@@ -104,16 +110,16 @@ Writing style:
 - Avoid fluff.
 
 CRITICAL:
-Explain WHY this message stays in the person's head.
-Explain WHAT it subtly does psychologically.
+Explain why this message stays in the person's head.
+Explain what it subtly does psychologically.
 
-Return ONLY JSON:
+Return ONLY valid JSON.
 
 {
   "toxicity_score": number,
   "detected": ["Gaslighting"],
-  "explanation": "Clear, emotionally sharp explanation (2-4 sentences).",
-  "emotional_impact": "Make the user feel seen (2-3 sentences).",
+  "explanation": "Clear, emotionally sharp explanation in 2-4 sentences.",
+  "emotional_impact": "Make the user feel seen in 2-3 sentences.",
   "suggested_reply": "Short, confident, real-world usable response."
 }
 
@@ -122,35 +128,42 @@ ${message}
 `;
 
     const response = await anthropic.messages.create({
-      model: "model: "claude-haiku-4-5"",
+      model: "claude-haiku-4-5",
       max_tokens: 400,
       temperature: 0.3,
       messages: [{ role: "user", content: prompt }],
     });
 
-    const text = response.content[0].text;
+    const text =
+      response &&
+      response.content &&
+      response.content[0] &&
+      response.content[0].text
+        ? response.content[0].text
+        : "";
+
     const jsonText = extractJson(text);
     const data = JSON.parse(jsonText);
 
     const finalScore = recalibrateScore(
       message,
-      data.detected || [],
+      Array.isArray(data.detected) ? data.detected : [],
       data.toxicity_score
     );
 
     return res.status(200).json({
       toxicity_score: finalScore,
-      detected: data.detected || [],
-      explanation: data.explanation,
-      emotional_impact: data.emotional_impact,
-      suggested_reply: data.suggested_reply,
+      detected: Array.isArray(data.detected) ? data.detected : [],
+      explanation: data.explanation || "",
+      emotional_impact: data.emotional_impact || "",
+      suggested_reply: data.suggested_reply || "",
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error analyzing message:", error);
 
     return res.status(500).json({
       error: "Error analyzing message",
       details: error.message,
     });
   }
-}
+};

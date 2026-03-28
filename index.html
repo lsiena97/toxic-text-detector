@@ -1,261 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Toxic Text Detector</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #fff9f5;
+  color: #333;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+textarea {
+  width: 90%;
+  max-width: 500px;
+  height: 120px;
+  padding: 10px;
+  margin-top: 20px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+button {
+  margin-top: 15px;
+  padding: 12px 20px;
+  background: #c47a6b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #a96558;
+}
+
+.result {
+  margin-top: 30px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+.score {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.tags span {
+  display: inline-block;
+  background: #fdecea;
+  color: #c0392b;
+  padding: 4px 8px;
+  border-radius: 20px;
+  margin: 3px;
+  font-size: 12px;
+}
+
+.block {
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>This is why that text made you feel crazy.</h1>
+<p>Paste the message you keep re-reading.</p>
+
+<textarea id="message" placeholder="Type or paste the message..."></textarea>
+
+<br>
+<button onclick="analyze()">Analyze This Message</button>
+
+<div class="result" id="result" style="display:none;">
+  <div class="score" id="score"></div>
+  <div class="tags" id="tags"></div>
+
+  <div class="block">
+    <strong>What's happening:</strong>
+    <p id="explanation"></p>
+  </div>
+
+  <div class="block">
+    <strong>Emotional impact:</strong>
+    <p id="impact"></p>
+  </div>
+
+  <div class="block">
+    <strong>Suggested reply:</strong>
+    <p id="reply"></p>
+  </div>
+</div>
+
 <script>
-/* ── Real Messages bar animation ──────────────── */
-const realMsgObserver = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.querySelectorAll('.realmsg-mini-fill').forEach(bar => {
-        const targetW = bar.style.width;
-        bar.style.width = '0%';
-        setTimeout(() => { bar.style.width = targetW; }, 150);
-      });
-      realMsgObserver.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.2 });
+async function analyze() {
+  const message = document.getElementById('message').value.trim();
 
-const realGrid = document.querySelector('.realmsgs-grid');
-if (realGrid) realMsgObserver.observe(realGrid);
-
-/* ── Scroll Reveal ─────────────────────────────── */
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      observer.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.12 });
-
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-/* ── Demo bar animation on scroll ─────────────── */
-const demoObserver = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      setTimeout(() => {
-        animateScore('demo-score', 'demo-bar', 84, '#d45c4e');
-      }, 200);
-      demoObserver.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.3 });
-
-const demoSection = document.getElementById('demo-section');
-if (demoSection) demoObserver.observe(demoSection);
-
-function animateScore(scoreId, barId, target, color) {
-  const scoreEl = document.getElementById(scoreId);
-  const barEl = document.getElementById(barId);
-
-  let current = 0;
-  const safeTarget = Math.max(0, Math.min(Number(target) || 0, 100));
-  const step = safeTarget / 60;
-
-  barEl.style.width = safeTarget + '%';
-  barEl.style.background = color
-    ? `linear-gradient(90deg, #e8a55c, ${color})`
-    : 'linear-gradient(90deg, #e8a55c, #d45c4e)';
-
-  const interval = setInterval(() => {
-    current = Math.min(current + step, safeTarget);
-    scoreEl.innerHTML = Math.round(current) + '<span>/ 100</span>';
-    if (current >= safeTarget) clearInterval(interval);
-  }, 16);
-}
-
-function getTagClass(label) {
-  const lower = String(label).toLowerCase();
-
-  if (
-    lower.includes('gaslighting') ||
-    lower.includes('manipulation') ||
-    lower.includes('emotional manipulation') ||
-    lower.includes('narciss')
-  ) {
-    return 'tag tag-danger';
-  }
-
-  if (
-    lower.includes('passive') ||
-    lower.includes('deflection') ||
-    lower.includes('dismiss') ||
-    lower.includes('blame') ||
-    lower.includes('generalization') ||
-    lower.includes('guilt') ||
-    lower.includes('warning')
-  ) {
-    return 'tag tag-warning';
-  }
-
-  return 'tag tag-purple';
-}
-
-function getTagEmoji(label) {
-  const lower = String(label).toLowerCase();
-
-  if (lower.includes('gaslighting')) return '🚨';
-  if (lower.includes('manipulation')) return '⚠️';
-  if (lower.includes('passive')) return '🪞';
-  if (lower.includes('narciss')) return '🪞';
-  if (lower.includes('deflection')) return '🔁';
-  if (lower.includes('dismiss')) return '🔁';
-  if (lower.includes('blame')) return '🔁';
-
-  return '✦';
-}
-
-function renderTags(containerId, tags) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-
-  (tags || []).forEach(tagText => {
-    const span = document.createElement('span');
-    span.className = getTagClass(tagText);
-    span.textContent = `${getTagEmoji(tagText)} ${tagText}`;
-    container.appendChild(span);
-  });
-}
-
-function renderApiResult(scoreId, barId, tagsId, expId, impactId, replyId, apiData, showImpact) {
-  const adapted = {
-    score: apiData?.toxicity_score ?? 0,
-    tags: apiData?.detected ?? [],
-    explanation: apiData?.explanation ?? 'No explanation returned.',
-    impact: apiData?.emotional_impact ?? '',
-    reply: apiData?.suggested_reply ?? 'No suggested reply returned.'
-  };
-
-  renderTags(tagsId, adapted.tags);
-  document.getElementById(expId).textContent = adapted.explanation;
-
-  if (showImpact && impactId) {
-    const impactEl = document.getElementById(impactId);
-    if (impactEl) impactEl.textContent = adapted.impact;
-  }
-
-  document.getElementById(replyId).textContent = adapted.reply;
-  document.getElementById(scoreId).innerHTML = '0<span>/ 100</span>';
-  document.getElementById(barId).style.width = '0%';
-
-  setTimeout(() => animateScore(scoreId, barId, adapted.score, '#d45c4e'), 100);
-}
-
-async function callAnalysisAPI(message) {
-  const response = await fetch('/api/analyze', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message })
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Error analyzing message');
-  }
-
-  return data;
-}
-
-async function analyzeMessage() {
-  const textarea = document.getElementById('userMessage');
-  const msg = textarea.value.trim();
-
-  if (!msg || msg.length < 5) {
-    textarea.style.borderColor = 'var(--deep-rose)';
-    textarea.placeholder = 'Please paste a message first…';
+  if (!message) {
+    alert("Paste a message first");
     return;
   }
 
-  textarea.style.borderColor = 'var(--rose)';
+  const resultBox = document.getElementById('result');
+  resultBox.style.display = 'block';
 
-  const result = document.getElementById('tryit-result');
-  result.classList.add('show');
-  result.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  document.getElementById('live-score').innerHTML = 'Analyzing...';
-  document.getElementById('live-tags').innerHTML = '';
-  document.getElementById('live-explanation').textContent = 'Reading the message...';
-  document.getElementById('live-impact').textContent = '';
-  document.getElementById('live-reply').textContent = '';
+  document.getElementById('score').innerText = "Analyzing...";
+  document.getElementById('tags').innerHTML = "";
+  document.getElementById('explanation').innerText = "";
+  document.getElementById('impact').innerText = "";
+  document.getElementById('reply').innerText = "";
 
   try {
-    const data = await callAnalysisAPI(msg);
-    renderApiResult(
-      'live-score',
-      'live-bar',
-      'live-tags',
-      'live-explanation',
-      'live-impact',
-      'live-reply',
-      data,
-      true
-    );
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Erro");
+    }
+
+    document.getElementById('score').innerText =
+      "Toxic Score: " + Math.round(data.toxicity_score * 100) + "%";
+
+    const tagsContainer = document.getElementById('tags');
+    tagsContainer.innerHTML = "";
+
+    (data.detected || []).forEach(tag => {
+      const span = document.createElement('span');
+      span.innerText = tag;
+      tagsContainer.appendChild(span);
+    });
+
+    document.getElementById('explanation').innerText = data.explanation;
+    document.getElementById('impact').innerText = data.emotional_impact;
+    document.getElementById('reply').innerText = data.suggested_reply;
+
   } catch (err) {
-    document.getElementById('live-score').innerHTML = 'Error';
-    document.getElementById('live-explanation').textContent = err.message || 'Something went wrong.';
-    document.getElementById('live-impact').textContent = '';
-    document.getElementById('live-reply').textContent = 'Please try again.';
+    document.getElementById('score').innerText = "Error analyzing message";
     console.error(err);
   }
 }
-
-async function analyzeModal() {
-  const textarea = document.getElementById('modalMessage');
-  const msg = textarea.value.trim();
-
-  if (!msg || msg.length < 5) {
-    textarea.style.borderColor = 'var(--deep-rose)';
-    return;
-  }
-
-  textarea.style.borderColor = 'var(--rose)';
-
-  const result = document.getElementById('modal-result');
-  result.style.display = 'block';
-
-  document.getElementById('modal-score').innerHTML = 'Analyzing...';
-  document.getElementById('modal-tags').innerHTML = '';
-  document.getElementById('modal-explanation').textContent = 'Reading the message...';
-  document.getElementById('modal-reply').textContent = '';
-
-  try {
-    const data = await callAnalysisAPI(msg);
-    renderApiResult(
-      'modal-score',
-      'modal-bar',
-      'modal-tags',
-      'modal-explanation',
-      null,
-      'modal-reply',
-      data,
-      false
-    );
-  } catch (err) {
-    document.getElementById('modal-score').innerHTML = 'Error';
-    document.getElementById('modal-explanation').textContent = err.message || 'Something went wrong.';
-    document.getElementById('modal-reply').textContent = 'Please try again.';
-    console.error(err);
-  }
-}
-
-/* ── Modal ─────────────────────────────────────── */
-function openModal() {
-  document.getElementById('modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModal() {
-  document.getElementById('modal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function closeOnOverlay(e) {
-  if (e.target === document.getElementById('modal')) closeModal();
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
-});
 </script>
+
 </body>
 </html>

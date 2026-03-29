@@ -553,34 +553,36 @@
 
     /* PAYWALL */
     .paywall-overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(34, 28, 26, .48);
-  backdrop-filter:blur(8px);
-  display:none;
-  align-items:flex-start;
-  justify-content:center;
-  padding:24px 20px;
-  z-index:999;
-  overflow-y:auto;
-}
+      position:fixed;
+      inset:0;
+      background:rgba(34, 28, 26, .48);
+      backdrop-filter:blur(8px);
+      display:none;
+      align-items:flex-start;
+      justify-content:center;
+      padding:24px 20px;
+      z-index:999;
+      overflow-y:auto;
+    }
+
     .paywall-overlay.show{
       display:flex;
     }
 
     .paywall-card{
-  width:min(620px, 100%);
-  background:linear-gradient(180deg, #fff 0%, #fff8f4 100%);
-  border:1px solid var(--line);
-  border-radius:30px;
-  box-shadow:0 24px 64px rgba(34,28,26,.22);
-  padding:28px;
-  position:relative;
-  overflow-y:auto;
-  overflow-x:hidden;
-  margin:auto 0;
-  max-height:92vh;
-}
+      width:min(620px, 100%);
+      background:linear-gradient(180deg, #fff 0%, #fff8f4 100%);
+      border:1px solid var(--line);
+      border-radius:30px;
+      box-shadow:0 24px 64px rgba(34,28,26,.22);
+      padding:28px;
+      position:relative;
+      overflow-y:auto;
+      overflow-x:hidden;
+      margin:auto 0;
+      max-height:92vh;
+    }
+
     .paywall-card::before{
       content:"";
       position:absolute;
@@ -849,14 +851,14 @@
       <div class="prehead">Read this before you reply to him.</div>
       <h1>This is why that text <em>made you feel crazy.</em></h1>
       <p class="hero-sub">
-        Paste the message. In seconds, AI tells you what’s really happening,
+        Paste the message. In seconds, AI tells you what's really happening,
         why it feels wrong, and what you can say back without losing yourself.
       </p>
       <div class="hero-actions">
         <button class="primary-btn" onclick="document.getElementById('analyzer').scrollIntoView({behavior:'smooth'})">
-          Check This Text — It’s Free
+          Check This Text — It's Free
         </button>
-        <div class="hero-note">Most people miss the exact pattern that’s affecting them. Don’t.</div>
+        <div class="hero-note">Most people miss the exact pattern that's affecting them. Don't.</div>
         <div class="hero-trust">Private & anonymous — your messages are never stored</div>
       </div>
     </div>
@@ -864,16 +866,16 @@
 
   <section class="section">
     <div class="container">
-      <h2 class="section-title">That nagging feeling you can’t shake</h2>
+      <h2 class="section-title">That nagging feeling you can't shake</h2>
       <p class="section-sub">
-        If any of these sound familiar, you’re exactly who this was built for.
+        If any of these sound familiar, you're exactly who this was built for.
       </p>
 
       <div class="pain-grid">
-        <div class="pain-card"><strong>“Why do I feel guilty after reading this?”</strong>You didn’t do anything wrong, yet somehow you still feel like the problem.</div>
-        <div class="pain-card"><strong>“Am I overreacting… or is he manipulating me?”</strong>That confusion is often the tactic, not the accident.</div>
-        <div class="pain-card"><strong>“He apologized, but it didn’t feel like an apology.”</strong>The words looked fine. The feeling underneath did not.</div>
-        <div class="pain-card"><strong>“I screenshot his messages to send to my friends.”</strong>Because part of you already knows something is off.</div>
+        <div class="pain-card"><strong>"Why do I feel guilty after reading this?"</strong>You didn't do anything wrong, yet somehow you still feel like the problem.</div>
+        <div class="pain-card"><strong>"Am I overreacting… or is he manipulating me?"</strong>That confusion is often the tactic, not the accident.</div>
+        <div class="pain-card"><strong>"He apologized, but it didn't feel like an apology."</strong>The words looked fine. The feeling underneath did not.</div>
+        <div class="pain-card"><strong>"I screenshot his messages to send to my friends."</strong>Because part of you already knows something is off.</div>
       </div>
     </div>
   </section>
@@ -882,15 +884,15 @@
     <div class="container analyzer-shell">
       <div class="analyzer-panel">
         <div class="panel-label">Try it yourself</div>
-        <h2 class="panel-title">Paste the message that’s been stuck in your head.</h2>
+        <h2 class="panel-title">Paste the message that's been stuck in your head.</h2>
         <p class="panel-sub">
-          We’ll name exactly what’s happening — in plain language, in seconds.
+          We'll name exactly what's happening — in plain language, in seconds.
           No judgment. Just clarity.
         </p>
 
         <textarea id="message" placeholder="Paste the message you keep re-reading… even the ones that sound normal on the surface."></textarea>
 
-        <div class="helper">You’ve already read it twice. Just check.</div>
+        <div class="helper">You've already read it twice. Just check.</div>
 
         <div class="cta-row">
           <button class="secondary-btn" onclick="analyze()">Analyze This Message</button>
@@ -919,7 +921,7 @@
           <div class="tags" id="tags"></div>
 
           <div class="result-block">
-            <div class="result-block-title">What’s really happening</div>
+            <div class="result-block-title">What's really happening</div>
             <p class="result-text" id="explanation"></p>
           </div>
 
@@ -932,6 +934,37 @@
             <div class="result-block-title">Suggested reply</div>
             <p class="result-text" id="reply"></p>
           </div>
+
+          <!-- BOTÃO PÓS-ANÁLISE: aparece após a 1ª análise concluída -->
+          <div id="postAnalysisCTA" style="display:none; margin-top:18px; border-top:1px solid var(--line); padding-top:18px;">
+            <p style="font-size:14px; color:var(--muted); margin:0 0 6px; text-align:center;">
+              Tem <strong style="color:var(--text);">outra mensagem</strong> que não saiu da sua cabeça?
+            </p>
+            <button
+              onclick="triggerSecondAnalysis()"
+              style="
+                width:100%;
+                padding:15px 18px;
+                border:none;
+                border-radius:999px;
+                background:var(--ink);
+                color:#fff;
+                font-family:inherit;
+                font-size:16px;
+                font-weight:800;
+                cursor:pointer;
+                transition:.2s ease;
+              "
+              onmouseover="this.style.background='#3a2e2b'"
+              onmouseout="this.style.background='var(--ink)'"
+            >
+              Analisar outra mensagem →
+            </button>
+            <p style="font-size:12px; color:var(--rose-dark); font-weight:700; text-align:center; margin:8px 0 0;">
+              A maioria das pessoas volta quando percebe que é um padrão.
+            </p>
+          </div>
+
         </div>
       </div>
     </div>
@@ -941,7 +974,7 @@
     <div class="container">
       <h2 class="section-title">From confusion to clarity</h2>
       <p class="section-sub">
-        This isn’t about deciding whether to stay or leave. It’s about seeing clearly.
+        This isn't about deciding whether to stay or leave. It's about seeing clearly.
       </p>
 
       <div class="benefit-grid">
@@ -971,13 +1004,13 @@
 
   <section class="section">
     <div class="container">
-      <h2 class="section-title">“I thought I was the problem.”</h2>
-      <p class="section-sub">You’re not. And this is exactly why women keep coming back to use it.</p>
+      <h2 class="section-title">"I thought I was the problem."</h2>
+      <p class="section-sub">You're not. And this is exactly why women keep coming back to use it.</p>
 
       <div class="proof-grid">
         <div class="proof-card">
           <div class="stars">★★★★★</div>
-          <p>I’d been rereading the same text for days. This gave me the exact language for what was happening.</p>
+          <p>I'd been rereading the same text for days. This gave me the exact language for what was happening.</p>
           <strong>Mariana T.</strong>
           <span>São Paulo, Brazil</span>
         </div>
@@ -1023,6 +1056,7 @@
     © 2026 Toxic Text Detector. For informational purposes only — not a substitute for professional mental health advice.
   </div>
 
+  <!-- PAYWALL -->
   <div class="paywall-overlay" id="paywallOverlay" aria-hidden="true">
     <div class="paywall-card">
       <div class="paywall-top">
@@ -1030,12 +1064,12 @@
         <button class="paywall-close" onclick="closePaywall()" aria-label="Close paywall">×</button>
       </div>
 
-      <h2 class="paywall-title">This isn’t just one message. It’s a pattern.</h2>
-      <p class="paywall-sub">Most people only realize what’s happening when it’s already too late.</p>
+      <h2 class="paywall-title">This isn't just one message. It's a pattern.</h2>
+      <p class="paywall-sub">Most people only realize what's happening when it's already too late.</p>
 
       <div class="paywall-emphasis">
-        <strong>You’re not overthinking.</strong>
-        <p>You’re noticing something your brain is trying to protect you from.</p>
+        <strong>You're not overthinking.</strong>
+        <p>You're noticing something your brain is trying to protect you from.</p>
       </div>
 
       <p class="paywall-break">
@@ -1045,7 +1079,7 @@
 
       <div class="paywall-list">
         <div>✔ See patterns across conversations</div>
-        <div>✔ Understand what’s really happening over time</div>
+        <div>✔ Understand what's really happening over time</div>
         <div>✔ Stop second-guessing yourself faster</div>
         <div>✔ Get confident replies every time</div>
         <div>✔ Know when something is not okay</div>
@@ -1060,7 +1094,7 @@
       </div>
 
       <div class="paywall-proof">
-        If you’re here, something didn’t feel right. That feeling is usually right.
+        If you're here, something didn't feel right. That feeling is usually right.
       </div>
 
       <button class="paywall-secondary" onclick="closePaywall()">Maybe later</button>
@@ -1070,15 +1104,22 @@
   <script>
     const FREE_ANALYSIS_KEY = 'ttd_free_analysis_used_v1';
 
+    // Limpa o campo e rola até o analisador para a 2ª tentativa acionar o paywall
+    function triggerSecondAnalysis(){
+      const textarea = document.getElementById('message');
+      textarea.value = '';
+      textarea.style.borderColor = '#ecd5ce';
+      document.getElementById('analyzer').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => textarea.focus(), 600);
+    }
+
     function getTagClass(label){
       const lower = String(label).toLowerCase();
-
       if (
         lower.includes('gaslighting') ||
         lower.includes('manipulation') ||
         lower.includes('narciss')
       ) return 'tag tag-danger';
-
       if (
         lower.includes('dismiss') ||
         lower.includes('deflection') ||
@@ -1087,7 +1128,6 @@
         lower.includes('guilt') ||
         lower.includes('generalization')
       ) return 'tag tag-warning';
-
       return 'tag tag-purple';
     }
 
@@ -1106,7 +1146,6 @@
     function renderTags(tags){
       const container = document.getElementById('tags');
       container.innerHTML = '';
-
       (tags || []).forEach(tagText => {
         const span = document.createElement('span');
         span.className = getTagClass(tagText);
@@ -1154,6 +1193,7 @@
         return;
       }
 
+      // Se já usou a análise grátis, mostra o paywall
       if (hasUsedFreeAnalysis()) {
         showPaywall();
         return;
@@ -1191,6 +1231,16 @@
         document.getElementById('reply').textContent = data.suggested_reply || '';
 
         markFreeAnalysisUsed();
+
+        // Mostra o botão "Analisar outra mensagem" após 0.8s
+        setTimeout(() => {
+          const cta = document.getElementById('postAnalysisCTA');
+          if (cta) {
+            cta.style.display = 'block';
+            cta.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 800);
+
       } catch (err) {
         document.getElementById('scoreNumber').innerHTML = `Error<span></span>`;
         document.getElementById('scoreBar').style.width = '0%';

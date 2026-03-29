@@ -24,7 +24,7 @@ async function sendEmail(to, licenseKey) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Toxic Text Detector <noreply@toxictextdetector.com>",
+      from: "Toxic Text Detector <onboarding@resend.dev>",
       to: [to],
       subject: "Your Toxic Text Detector Premium access key 🔑",
       html: `
@@ -118,7 +118,7 @@ module.exports = async function handler(req, res) {
   return res.status(200).json({ received: true });
 };
 
-export const config = {
+module.exports.config = {
   api: {
     bodyParser: false,
   },
